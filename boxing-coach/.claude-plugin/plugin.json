@@ -1,0 +1,8 @@
+{
+  "name": "boxing-coach",
+  "version": "0.1.0",
+  "description": "Sparring-Analyse für Boxer: Beschreib deinen Sparringspartner und bekomme eine Stil-Einschätzung, konkrete Konter, passende Drills und einen Trainingsplan für die nächsten Einheiten.",
+  "author": {
+    "name": "BigNorey"
+  }
+}

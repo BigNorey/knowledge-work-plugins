@@ -1470,6 +1470,12 @@
         "sha": "41cb943db7f96e33f0255f46c882742cb92cb909"
       },
       "homepage": "https://govtribe.com"
+    },
+    {
+      "name": "boxing-coach",
+      "displayName": "Boxing Coach",
+      "source": "./boxing-coach",
+      "description": "Beschreib deinen Sparringspartner und bekomme Stil-Einschätzung, Konter, Drills und einen Trainingsplan, um ihn auszuboxen."
     }
   ]
 }
