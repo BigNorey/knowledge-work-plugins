@@ -1,0 +1,615 @@
+<title>Sparring-Analyse</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: zwei Ecken (rot = du, blau = Partner) nebeneinander, darunter Gewohnheiten, dann Ergebnis als "Rundenkarte" */
+:root {
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --surface-2: #f5f7fa;
+  --ink: #141a26;
+  --muted: #586274;
+  --line: #d6dce5;
+  --red: #c42a30;
+  --red-soft: #fbe9ea;
+  --blue: #1f4fa8;
+  --blue-soft: #e7eefb;
+  --ok: #1d7a4a;
+  --font-display: "Anton", "Impact", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-label: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e121a; --surface: #161b26; --surface-2: #1c2230; --ink: #e8ecf3; --muted: #9ba5b7; --line: #2a3243;
+    --red: #ff5c61; --red-soft: #3a1c20; --blue: #7ea4ff; --blue-soft: #1a2541; --ok: #4fd08b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e121a; --surface: #161b26; --surface-2: #1c2230; --ink: #e8ecf3; --muted: #9ba5b7; --line: #2a3243;
+  --red: #ff5c61; --red-soft: #3a1c20; --blue: #7ea4ff; --blue-soft: #1a2541; --ok: #4fd08b; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 28px; }
+header { padding-top: 28px; display: grid; gap: 10px; }
+.ropes { display: grid; gap: 5px; margin-bottom: 6px; }
+.ropes span { height: 3px; border-radius: 2px; background: var(--line); }
+.ropes span:first-child { background: var(--red); }
+.ropes span:last-child { background: var(--blue); }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(2.4rem, 7vw, 4rem); line-height: 1; letter-spacing: .01em; margin: 0; text-transform: uppercase; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 62ch; font-size: 1.05rem; }
+.label { font-family: var(--font-label); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; font-size: .82rem; color: var(--muted); }
+h2 { font-family: var(--font-label); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; font-size: 1.35rem; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-label); font-weight: 700; font-size: 1.12rem; margin: 0; letter-spacing: .02em; }
+
+.corners { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 760px) { .corners { grid-template-columns: 1fr; } }
+.corner { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 16px; align-content: start; min-width: 0; }
+.corner-head { display: flex; align-items: center; gap: 10px; }
+.dot { width: 14px; height: 14px; border-radius: 3px; flex: none; }
+.red .dot { background: var(--red); } .blue .dot { background: var(--blue); }
+.corner.red { border-top: 4px solid var(--red); } .corner.blue { border-top: 4px solid var(--blue); }
+
+.field { display: grid; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { position: relative; }
+.chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.chip span { display: inline-block; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); font-size: .92rem; cursor: pointer; user-select: none; }
+.chip input:checked + span { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.blue .chip input:checked + span, .habits .chip input:checked + span { background: var(--blue); border-color: var(--blue); color: #fff; }
+.red .chip input:checked + span { background: var(--red); border-color: var(--red); color: #fff; }
+.chip input:focus-visible + span { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.habits { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; }
+.habits .chips { gap: 8px; }
+textarea { width: 100%; min-height: 96px; resize: vertical; font: inherit; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+textarea:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button { font: inherit; cursor: pointer; border-radius: 8px; padding: 11px 18px; border: 1px solid transparent; font-family: var(--font-label); font-weight: 700; font-size: 1.05rem; letter-spacing: .05em; text-transform: uppercase; }
+button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.btn-main { background: var(--red); color: #fff; }
+.btn-claude { background: var(--surface); color: var(--ink); border-color: var(--ink); }
+.btn-ghost { background: transparent; color: var(--muted); border-color: var(--line); font-size: .9rem; padding: 8px 12px; }
+button:disabled { opacity: .55; cursor: default; }
+.hint { color: var(--muted); font-size: .9rem; }
+
+.result { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 22px; min-width: 0; }
+.result-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+.styles { display: flex; flex-wrap: wrap; gap: 8px; }
+.style-badge { font-family: var(--font-label); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 6px 12px; border-radius: 6px; background: var(--blue-soft); color: var(--blue); }
+.style-badge small { font-weight: 600; opacity: .75; margin-left: 6px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+.box { background: var(--surface-2); border-radius: 8px; padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+ul.clean { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: .95rem; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-label); text-transform: uppercase; letter-spacing: .06em; font-size: .8rem; color: var(--muted); background: var(--surface-2); }
+tr:last-child td { border-bottom: 0; }
+td.counter { font-weight: 600; }
+td .warn { display: block; color: var(--muted); font-size: .88rem; margin-top: 4px; font-weight: 400; }
+ol.plan { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; counter-reset: r; }
+ol.plan li { counter-increment: r; display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start; }
+ol.plan li::before { content: counter(r); font-family: var(--font-display); font-size: 1.3rem; line-height: 1.1; color: var(--red); text-align: center; }
+.drills { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.drill { border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 6px; align-content: start; }
+.drill .meta { font-family: var(--font-label); font-weight: 600; color: var(--red); letter-spacing: .04em; font-size: .9rem; }
+.note { border-left: 3px solid var(--red); padding: 4px 0 4px 12px; color: var(--muted); font-size: .93rem; }
+
+.claude { display: grid; gap: 14px; }
+.claude-out { background: var(--surface-2); border-radius: 8px; padding: 16px 18px; min-width: 0; overflow-wrap: anywhere; }
+.claude-out h2 { font-size: 1.15rem; margin-top: 14px; } .claude-out h2:first-child { margin-top: 0; }
+.claude-out h3 { margin-top: 10px; }
+.claude-out p { margin: 8px 0; } .claude-out ul, .claude-out ol { margin: 6px 0; padding-left: 1.3em; }
+.claude-out .table-wrap { margin: 10px 0; } .claude-out table { min-width: 520px; }
+.turn-user { border-left: 3px solid var(--blue); padding: 6px 0 6px 12px; color: var(--muted); }
+.follow { display: grid; gap: 8px; }
+.quick { display: flex; flex-wrap: wrap; gap: 8px; }
+.status { font-family: var(--font-label); font-weight: 600; letter-spacing: .05em; color: var(--muted); }
+.pulse { animation: p 1.2s ease-in-out infinite; }
+@keyframes p { 50% { opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+footer { color: var(--muted); font-size: .88rem; max-width: 70ch; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="ropes" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="label">Boxing Coach · Testversion</div>
+    <h1>Sparring-Analyse</h1>
+    <p class="lede">Beschreib, wie dein Sparringspartner boxt. Du bekommst seinen Stil, Konter für jede seiner Gewohnheiten, einen Gameplan und passende Drills. Das Beispiel unten ist schon ausgefüllt, ändere es einfach.</p>
+  </header>
+
+  <form id="form" class="wrap" style="gap:16px" autocomplete="off">
+    <div class="corners">
+      <section class="corner red" aria-labelledby="h-du">
+        <div class="corner-head"><span class="dot"></span><h2 id="h-du">Du · rote Ecke</h2></div>
+        <div class="field"><span class="label">Deine Auslage</span>
+          <div class="chips" data-name="myStance"></div></div>
+        <div class="field"><span class="label">Erfahrung</span>
+          <div class="chips" data-name="level"></div></div>
+        <div class="field"><span class="label">Dein Stil (optional)</span>
+          <div class="chips" data-name="myStyle"></div></div>
+      </section>
+
+      <section class="corner blue" aria-labelledby="h-partner">
+        <div class="corner-head"><span class="dot"></span><h2 id="h-partner">Partner · blaue Ecke</h2></div>
+        <div class="field"><span class="label">Seine Auslage</span>
+          <div class="chips" data-name="pStance"></div></div>
+        <div class="field"><span class="label">Größe / Reichweite im Vergleich zu dir</span>
+          <div class="chips" data-name="size"></div></div>
+        <div class="field"><span class="label">Lieblingsdistanz</span>
+          <div class="chips" data-name="distance"></div></div>
+        <div class="field"><span class="label">Bewegung</span>
+          <div class="chips" data-name="movement"></div></div>
+        <div class="field"><span class="label">Schläge</span>
+          <div class="chips" data-name="output"></div></div>
+      </section>
+    </div>
+
+    <section class="habits" aria-labelledby="h-hab">
+      <div><h2 id="h-hab">Was macht er immer wieder?</h2><p class="hint" style="margin:4px 0 0">Wähl alles, was dir im Sparring auffällt. Daraus entstehen die Konter.</p></div>
+      <div class="chips" data-name="habits" data-multi="1"></div>
+      <div class="field"><label class="label" for="freetext">Freie Beschreibung (für die Claude-Analyse)</label>
+        <textarea id="freetext" name="freetext" placeholder="z. B. Lieblingskombi, wie er reagiert, wenn er getroffen wird, was bei dir bisher schiefgeht …"></textarea></div>
+    </section>
+
+    <div class="actions">
+      <button type="submit" class="btn-main" id="btn-run">Analyse starten</button>
+      <button type="button" class="btn-claude" id="btn-claude" hidden>Claude ausführlich fragen</button>
+      <button type="button" class="btn-ghost" id="btn-reset">Alles leeren</button>
+    </div>
+  </form>
+
+  <section class="result" id="result" aria-live="polite"></section>
+
+  <section class="result claude" id="claude-box" hidden>
+    <div class="result-head"><h2>Analyse von Claude</h2><span class="status" id="claude-status"></span></div>
+    <div id="claude-thread" class="claude" style="gap:12px"></div>
+    <div class="follow" id="follow" hidden>
+      <div class="quick">
+        <button type="button" class="btn-ghost" data-q="Mach mir einen Trainingsplan für die Woche bis zum nächsten Sparring. Ich trainiere 3-mal pro Woche je ca. 90 Minuten, mit Partner und Pratzen.">Trainingsplan für die Woche</button>
+        <button type="button" class="btn-ghost" data-q="Erklär mir den wichtigsten Konter Schritt für Schritt: Füße, Hände, Timing und typische Fehler.">Wichtigsten Konter genau erklären</button>
+        <button type="button" class="btn-ghost" data-q="Gib mir einen Plan Runde für Runde für ein Sparring über 4 Runden.">Plan pro Runde</button>
+      </div>
+      <label class="label" for="followtext">Nachfrage oder Feedback nach dem Sparring</label>
+      <textarea id="followtext" placeholder="z. B. Der Cross-Konter hat geklappt, aber dann hat er angefangen zu doppeln. Was jetzt?"></textarea>
+      <div class="actions"><button type="button" class="btn-claude" id="btn-follow">Senden</button><button type="button" class="btn-ghost" id="btn-stop" hidden>Stopp</button></div>
+    </div>
+  </section>
+
+  <footer>Sparring ist Training, kein Kampf: sprecht die Intensität ab und tragt Schutzausrüstung. Bei Kopfschmerzen, Schwindel oder Übelkeit nach dem Sparring nicht weitermachen und zum Arzt. Besprich den Plan mit deinem Trainer.</footer>
+</div>
+
+<script>
+const OPTIONS = {
+  myStance: [["o","Orthodox (links vorne)"],["s","Southpaw (rechts vorne)"]],
+  level: [["a","Anfänger"],["f","Fortgeschritten"],["w","Wettkampf"]],
+  myStyle: [["druck","Druck"],["distanz","Distanz"],["konter","Konter"],["power","Power"],["unsicher","Weiß nicht"]],
+  pStance: [["o","Orthodox"],["s","Southpaw"],["w","Wechselt"]],
+  size: [["g","Größer"],["e","Gleich"],["k","Kleiner"]],
+  distance: [["lang","Lang"],["mittel","Mittel"],["eng","Eng / Clinch"]],
+  movement: [["vor","Drückt nach vorne"],["viel","Viel Beinarbeit"],["wartet","Wartet und kontert"],["steht","Steht viel"]],
+  output: [["wenig","Wenige, harte Schläge"],["mittel","Mittel"],["viel","Viele Schläge / Kombis"],["wild","Wild, komische Winkel"]],
+  habits: []
+};
+
+// Gewohnheiten -> Konter. F = deine Führhand, S = deine Schlaghand (werden je nach Auslage ersetzt).
+const HABITS = [
+  {id:"jab_drop", label:"Lässt nach dem Jab die Führhand fallen",
+   counter:{same:"Slip leicht nach innen, dann {S}-Cross über seinen Jab. Alternative: Slip nach außen und {F}-Haken.", mixed:"{F}-Haken über seine fallende Führhand, oder {S}-Gerade durch die Mitte, sobald sein Jab zurückkommt."},
+   why:"Seine Kopfseite ist offen, solange die Hand zurückkommt.", warn:"Nicht zu früh starten. Erst den Jab kommen lassen.", drill:"slip"},
+  {id:"jab_same", label:"Jabt immer im gleichen Rhythmus",
+   counter:"Parry mit der {S} und sofort eigener Jab hinterher, oder Slip außen und {S} zum Körper.",
+   why:"Gleicher Rhythmus heißt, du kannst das Timing lernen.", warn:"Zwei, drei Jabs lang nur beobachten, dann zuschlagen.", drill:"slip"},
+  {id:"telegraph", label:"Holt bei der Schlaghand aus",
+   counter:"Kurzer {F}-Haken beim Ausholen. Oder unter dem Schlag wegrollen und mit Haken + Cross zurück.",
+   why:"Ein kurzer Haken ist schneller als ein weiter Schwinger.", warn:"Kinn runter, Schulter hoch.", drill:"checkhook"},
+  {id:"rear_drop", label:"Lässt beim Schlagen die hintere Hand fallen",
+   counter:"Abwehren, dann {F}-Haken zum Kopf auf die offene Seite.",
+   why:"Die Lücke an seinem Kinn öffnet sich bei jedem Schlag.", warn:"Mit Pratzen üben, bis es automatisch kommt.", drill:"blockreturn"},
+  {id:"straight_back", label:"Geht unter Druck gerade zurück",
+   counter:"Doppel-Jab hinterher, dann {S}-Cross. Drück ihn Richtung Seile oder Ecke.",
+   why:"Rückwärts ist er langsamer als du vorwärts, und hinten wartet das Seil.", warn:"Nicht blind nachrennen. Deckung oben, er kann kontern.", drill:"cutring"},
+  {id:"same_side", label:"Weicht immer zur gleichen Seite aus",
+   counter:"Die Seite zumachen: Schritt oder Haken genau dorthin, wo er hingeht.",
+   why:"Ring abschneiden statt hinterherlaufen.", warn:"Seitlich mitgehen, nicht gerade hinterher.", drill:"cutring"},
+  {id:"head_forward", label:"Kommt mit dem Kopf zuerst / beugt sich vor",
+   counter:"{S}-Uppercut beim Reinkommen, oder Pivot zur Seite + Haken.",
+   why:"Ein vorgebeugter Kopf läuft genau in den Uppercut.", warn:"Uppercut kurz halten, nicht ausholen. Im Sparring auf Kopfstöße achten.", drill:"uppercut"},
+  {id:"square", label:"Steht frontal / quadratisch",
+   counter:"Jab + Cross gerade durch die Mitte, dazu Körperschläge zur Leber und zum Solarplexus.",
+   why:"Frontal ist er ein großes Ziel, der Kopf steht auf der Mittellinie.", warn:"Frontal kann er dafür mit beiden Händen gleich hart schlagen.", drill:"obenunten"},
+  {id:"chin_up", label:"Kinn hoch",
+   counter:"Gerade Schläge (Jab-Cross) und Uppercuts.",
+   why:"Mit hohem Kinn steht er weniger stabil.", warn:"Im Sparring kontrolliert treffen.", drill:"uppercut"},
+  {id:"duck_same", label:"Duckt oder slippt immer gleich",
+   counter:"Jab antäuschen und den Haken auf die Seite schlagen, wohin sein Kopf geht.",
+   why:"Du schickst seinen Kopf hin, der Haken wartet schon.", warn:"Die Finte muss echt aussehen.", drill:"finten"},
+  {id:"body_open", label:"Hohe Deckung, Körper offen",
+   counter:"Jab zum Kopf (die Hände gehen hoch), dann {F}-Haken zum Körper.",
+   why:"Der Oben-Unten-Wechsel öffnet ihn.", warn:"Beim Körperschlag in die Knie gehen, nicht nur bücken.", drill:"obenunten"},
+  {id:"guard_low", label:"Deckung tief",
+   counter:"Jab und Cross zum Kopf, Haken über die Deckung.",
+   why:"Der Kopf ist frei.", warn:"Tiefe Deckung heißt oft Konterboxer. Deine eigene Deckung bleibt oben.", drill:"kontaufkont"},
+  {id:"singles", label:"Schlägt nur Einzelschläge",
+   counter:"Sofort nach seinem Schlag zurück (Block & Return).",
+   why:"Nach jedem Schlag macht er eine Pause. Das ist dein Fenster.", warn:"Innerhalb einer halben Sekunde antworten.", drill:"blockreturn"},
+  {id:"long_combos", label:"Schlägt lange Kombis",
+   counter:"Eng decken, dann am Ende der Kombi kontern oder mit Winkel rausgehen.",
+   why:"Am Ende der Kombi ist er offen und holt Luft.", warn:"Nicht die ganze Kombi stehen bleiben und einstecken.", drill:"blockreturn"},
+  {id:"tired", label:"Wird in späteren Runden müde",
+   counter:"Runde 1 und 2 viel bewegen und Tempo hochhalten, ab Runde 3 Druck machen.",
+   why:"So nutzt du deine bessere Kondition.", warn:"Du musst selbst die Luft dafür haben.", drill:"kondition"},
+  {id:"body_reacts", label:"Nimmt bei Körpertreffern die Hände runter",
+   counter:"Doppelhaken: {F}-Haken zum Körper, dann sofort {F}-Haken zum Kopf.",
+   why:"Die Hände gehen runter, der Kopf wird frei.", warn:"Der zweite Haken muss schnell kommen.", drill:"obenunten"},
+  {id:"pulls_back", label:"Lehnt sich beim Ausweichen zurück",
+   counter:"Doppel-Jab (der zweite trifft) oder Jab, Schritt, Cross.",
+   why:"Wer zurücklehnt, kommt danach wieder nach vorne.", warn:"Achte auf seinen Konter, wenn er wieder nach vorne kommt.", drill:"finten"},
+  {id:"clinches", label:"Clincht sofort, wenn es eng wird",
+   counter:"Kurz rein, 2–3 Schläge, dann mit Winkel raus, bevor er greift.",
+   why:"Gerade rein und raus gibt ihm die Zeit zum Festhalten.", warn:"Wenn er dich hat: Ellbogen nach innen, Hände freikämpfen.", drill:"wall"},
+  {id:"switches", label:"Wechselt die Auslage",
+   counter:"Beobachte, wann er wechselt, und greif genau in dem Moment an.",
+   why:"Beim Wechsel steht er kurz unsauber.", warn:"Erst Muster erkennen, dann zuschlagen.", drill:"finten"},
+  {id:"head_still", label:"Kopf bleibt nach dem Schlag in der Mitte",
+   counter:"Konter direkt auf die Mittellinie mit Jab oder Cross.",
+   why:"Er bewegt den Kopf nach dem Schlag nicht weg.", warn:"Gerade schlagen, nicht ausholen.", drill:"blockreturn"}
+];
+OPTIONS.habits = HABITS.map(h => [h.id, h.label]);
+
+const STYLES = {
+  druck:{name:"Druckboxer", desc:"Läuft ständig nach vorne, will dich an die Seile drücken und auf kurze Distanz arbeiten.",
+    str:["Hohes Tempo und viel Druck","Starke Körperarbeit","Zermürbt dich konditionell"],
+    plan:["Nicht gerade zurückgehen. Seitlich weg, Pivot, immer Richtung Ringmitte.","Jab als Stopp-Schlag, wenn er reinkommt.","Check-Hook beim Reinkommen: Haken und Pivot zur Seite."],
+    drills:["checkhook","wall"]},
+  distanz:{name:"Distanzboxer", desc:"Viel Beinarbeit und ein langer Jab. Er punktet und geht weg.",
+    str:["Reichweite und Timing","Auf Distanz schwer zu treffen"],
+    plan:["Ring abschneiden: seitlich mitgehen statt hinterherlaufen.","Unter oder neben seinem Jab reinkommen und sofort arbeiten.","Körper treffen, das macht seine Beine langsam."],
+    drills:["cutring","slip"]},
+  konter:{name:"Konterboxer", desc:"Wartet geduldig und bestraft jeden Fehler mit scharfen Kontern.",
+    str:["Sehr gutes Timing und Reflexe","Bestraft unsauberes Angreifen"],
+    plan:["Viele Finten. Lock ihn raus und konter seinen Konter.","Hand nach jedem Schlag sofort zurück, Kopf bewegen.","Rhythmus brechen: mal schnell, mal langsam."],
+    drills:["finten","kontaufkont"]},
+  power:{name:"Puncher", desc:"Wenige, aber harte Schläge, oft weit ausgeholt. Er sucht den einen großen Treffer.",
+    str:["Viel Power, ein Treffer kann reichen"],
+    plan:["Bewegen, nicht in seiner Lieblingsdistanz stehen bleiben.","Kurz und gerade schlagen, das schlägt weit und rund.","Viele schnelle Schläge, dann raus."],
+    drills:["checkhook","blockreturn"]},
+  volumen:{name:"Volumen-Boxer", desc:"Schlägt ständig und hat eine hohe Schlagzahl, nicht immer hart.",
+    str:["Viele Treffer, hohe Punktzahl","Schwer, selbst in den Rhythmus zu kommen"],
+    plan:["Den ersten Schlag eng abwehren, dann in die Kombi kontern.","Winkel nehmen, damit seine Kombi ins Leere geht.","Clinch, um seinen Rhythmus zu brechen."],
+    drills:["blockreturn","kondition"]},
+  clinch:{name:"Clincher", desc:"Hält fest, sobald es eng wird, und bricht deinen Rhythmus.",
+    str:["Nimmt dir den Rhythmus","Macht dich auf kurzer Distanz müde"],
+    plan:["Auf Distanz bleiben mit Jab und Beinarbeit.","Kurz rein, Schläge setzen, mit Winkel sofort raus."],
+    drills:["wall","cutring"]},
+  wild:{name:"Unorthodox", desc:"Komische Winkel, schwer zu lesen, oft wenig saubere Technik.",
+    str:["Unberechenbar","Schläge aus ungewohnten Winkeln"],
+    plan:["Ruhig bleiben, Deckung eng.","Gerade schlagen, das ist der schnellste Weg.","Erste Runde beobachten, auch er hat Muster."],
+    drills:["blockreturn","slip"]},
+  allround:{name:"Boxer-Puncher", desc:"Kann auf Distanz boxen und hart treffen, ziemlich komplett.",
+    str:["Kaum offensichtliche Schwächen","Passt sich an"],
+    plan:["Finde heraus, was er lieber macht, und zwing ihn ins Gegenteil.","Viele Finten, viel Bewegung.","Kondition ausspielen."],
+    drills:["finten","kondition"]}
+};
+
+const DRILLS = {
+  slip:{name:"Slip-Counter", meta:"Partner · 3 × 2 Min", text:"Partner schlägt langsam Jabs, du slippst und konterst sofort. Jede Runde etwas schneller. Später variiert er zwischen Jab und Doppel-Jab."},
+  checkhook:{name:"Check-Hook", meta:"Pratzen/Partner · 3 × 2 Min", text:"Partner kommt mit Druck nach vorne, du setzt den Führhand-Haken und pivotierst zur Seite. Am Ende stehst du neben ihm, nicht vor ihm."},
+  cutring:{name:"Ring abschneiden", meta:"Partner · 3 × 2 Min", text:"Partner bewegt sich nur, du bringst ihn in eine Ecke, mit seitlichen Schritten statt hinterherlaufen. Erst ohne Schläge, dann mit Jab."},
+  blockreturn:{name:"Block & Return", meta:"Partner · 3 × 2 Min", text:"Partner schlägt eine Kombi, du blockst und schlägst zurück, bevor er sich sortiert hat. Ziel: Antwort unter einer halben Sekunde."},
+  finten:{name:"Finten-Drill", meta:"Schatten/Partner · 3 × 3 Min", text:"Jede Kombi beginnt mit einer Finte (Jab, Schulter, Schritt). Achte auf seine Reaktion und nutze sie."},
+  obenunten:{name:"Oben-Unten", meta:"Sandsack/Pratzen · 3 × 3 Min", text:"Haken Körper und dann Haken Kopf, Jab-Cross zum Körper, dann Haken zum Kopf. In die Knie gehen statt bücken."},
+  uppercut:{name:"Uppercut-Timing", meta:"Pratzen · 3 × 2 Min", text:"Trainer simuliert das Vorbeugen und Reinkommen, du antwortest mit Uppercut und Haken. Kurz und ohne Ausholen."},
+  wall:{name:"Raus von den Seilen", meta:"Schattenboxen · 3 × 2 Min", text:"Rücken nah an Wand oder Seilen: mit Pivot und Winkel rauskommen, nie gerade zurück."},
+  kontaufkont:{name:"Konter auf den Konter", meta:"Partner · 3 × 2 Min", text:"Du jabst, Partner kontert mit dem Cross, du rollst darunter weg und kommst mit Haken und Cross zurück."},
+  kondition:{name:"Tempo-Intervalle", meta:"Sandsack · 6 × 1 Min", text:"30 Sekunden maximales Tempo, 30 Sekunden locker. So hältst du sein Tempo in den späten Runden mit."},
+  southpaw:{name:"Führfuß außen", meta:"Partner · 3 × 2 Min", text:"Gegen die andere Auslage: nur den Führfuß außen gewinnen, erst ohne Schläge. Dann jedes Mal, wenn du außen bist, die Schlaghand gerade."}
+};
+
+const EXAMPLE = {myStance:"o", level:"f", myStyle:"druck", pStance:"o", size:"g", distance:"lang", movement:"viel", output:"mittel",
+  habits:["jab_drop","straight_back","tired"],
+  freetext:"Er ist ca. 10 cm größer, jabt viel und hält mich damit weg. Wenn ich reingehe, nimmt er mich mit Jab-Cross. In Runde 3 wird er langsamer und lässt die Hände hängen."};
+
+// ---------- Formular bauen ----------
+const form = document.getElementById("form");
+document.querySelectorAll(".chips[data-name]").forEach(box => {
+  const name = box.dataset.name, multi = !!box.dataset.multi;
+  OPTIONS[name].forEach(([v, l]) => {
+    const lab = document.createElement("label"); lab.className = "chip";
+    const inp = document.createElement("input"); inp.type = multi ? "checkbox" : "radio"; inp.name = name; inp.value = v; inp.id = name + "-" + v;
+    if (!multi) inp.addEventListener("click", e => { if (inp.dataset.was === "1") { inp.checked = false; inp.dataset.was = ""; save(); } else { form.querySelectorAll(`input[name="${name}"]`).forEach(i => i.dataset.was = ""); inp.dataset.was = "1"; } });
+    const sp = document.createElement("span"); sp.textContent = l;
+    lab.append(inp, sp); box.append(lab);
+  });
+});
+
+function readForm() {
+  const d = {};
+  for (const k of Object.keys(OPTIONS)) {
+    if (k === "habits") d.habits = [...form.querySelectorAll('input[name="habits"]:checked')].map(i => i.value);
+    else d[k] = (form.querySelector(`input[name="${k}"]:checked`) || {}).value || "";
+  }
+  d.freetext = document.getElementById("freetext").value.trim();
+  return d;
+}
+function fillForm(d) {
+  form.querySelectorAll("input").forEach(i => {
+    i.checked = i.name === "habits" ? (d.habits || []).includes(i.value) : d[i.name] === i.value;
+    i.dataset.was = i.checked ? "1" : "";
+  });
+  document.getElementById("freetext").value = d.freetext || "";
+}
+const KEY = "sparring-analyse-v1";
+function save() { try { localStorage.setItem(KEY, JSON.stringify(readForm())); } catch (e) {} }
+function load() { try { const s = localStorage.getItem(KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+form.addEventListener("change", save);
+document.getElementById("freetext").addEventListener("input", save);
+
+// ---------- Regel-Analyse ----------
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const label = (k, v) => (OPTIONS[k].find(o => o[0] === v) || [, ""])[1];
+
+function classify(d) {
+  const s = {druck:0, distanz:0, konter:0, power:0, volumen:0, clinch:0, wild:0};
+  if (d.movement === "vor") { s.druck += 3; }
+  if (d.movement === "viel") { s.distanz += 3; }
+  if (d.movement === "wartet") { s.konter += 3; }
+  if (d.movement === "steht") { s.power += 1; s.konter += 1; }
+  if (d.distance === "lang") { s.distanz += 2; }
+  if (d.distance === "mittel") { s.power += 1; s.konter += 1; }
+  if (d.distance === "eng") { s.druck += 2; s.clinch += 1; }
+  if (d.output === "wenig") { s.power += 3; s.konter += 1; }
+  if (d.output === "viel") { s.volumen += 3; s.druck += 1; }
+  if (d.output === "wild") { s.wild += 4; }
+  const h = new Set(d.habits);
+  if (h.has("clinches")) s.clinch += 3;
+  if (h.has("long_combos")) s.volumen += 2;
+  if (h.has("singles")) { s.power += 1; s.konter += 1; }
+  if (h.has("telegraph")) s.power += 2;
+  if (h.has("guard_low")) s.konter += 1;
+  if (h.has("head_forward")) s.druck += 1;
+  if (h.has("straight_back")) s.distanz += 1;
+  const ranked = Object.entries(s).sort((a, b) => b[1] - a[1]);
+  if (ranked[0][1] === 0) return [];
+  const top = ranked.filter(([, v]) => v > 0 && v >= ranked[0][1] - 1).slice(0, 2);
+  if (top.length === 2 && top[0][1] <= 3 && ["distanz","power"].every(x => top.some(t => t[0] === x))) return [["allround", 1]];
+  return top.map(([k, v]) => [k, v / ranked[0][1]]);
+}
+
+function hands(d) {
+  const south = d.myStance === "s";
+  return { F: south ? "rechten" : "linken", S: south ? "linken" : "rechten",
+           Fn: south ? "Rechte" : "Linke", Sn: south ? "Rechte" : "Linke" };
+}
+function fillHands(txt, d) {
+  const h = hands(d);
+  // "{S}-Cross" -> "Schlaghand-Cross (rechts)" etc.
+  return txt.replace(/\{F\}-(\w+)/g, (_, w) => `Führhand-${w} (${h.F === "linken" ? "links" : "rechts"})`)
+            .replace(/\{S\}-(\w+)/g, (_, w) => `Schlaghand-${w} (${h.S === "linken" ? "links" : "rechts"})`)
+            .replace(/der \{S\}/g, `der Schlaghand (${h.S === "linken" ? "links" : "rechts"})`)
+            .replace(/\{S\}/g, `Schlaghand (${h.S === "linken" ? "links" : "rechts"})`)
+            .replace(/\{F\}/g, `Führhand (${h.F === "linken" ? "links" : "rechts"})`);
+}
+function mixedStance(d) {
+  if (!d.myStance || !d.pStance || d.pStance === "w") return false;
+  return d.myStance !== d.pStance;
+}
+
+function analyse(d) {
+  const styles = classify(d);
+  const mixed = mixedStance(d);
+  let habits = HABITS.filter(h => d.habits.includes(h.id));
+  const beginner = d.level === "a";
+  const limited = beginner && habits.length > 3;
+  if (beginner) habits = habits.slice(0, 3);
+
+  const counters = habits.map(h => ({
+    label: h.label,
+    counter: fillHands(typeof h.counter === "string" ? h.counter : (mixed ? h.counter.mixed : h.counter.same), d),
+    why: h.why, warn: h.warn, drill: h.drill
+  }));
+
+  const strengths = [];
+  styles.forEach(([k]) => STYLES[k].str.forEach(x => strengths.includes(x) || strengths.push(x)));
+  if (d.size === "g") strengths.push("Mehr Reichweite als du");
+
+  const plan = [];
+  const st = styles[0] ? STYLES[styles[0][0]] : null;
+  if (st) plan.push(...st.plan.slice(0, 2));
+  if (mixed) plan.push(d.myStance === "o" ? "Andere Auslage: Führfuß außen gewinnen, nach links bewegen (weg von seiner linken Schlaghand), deine Rechte ist die Hauptwaffe." : "Andere Auslage: Führfuß außen gewinnen, nach rechts bewegen (weg von seiner rechten Schlaghand), deine Linke ist die Hauptwaffe.");
+  if (d.pStance === "w") plan.push("Er wechselt die Auslage: Achte darauf, wann. In dem Moment steht er unsauber.");
+  if (d.size === "g") plan.push("Er ist größer: Distanz mit Kopfbewegung schließen, nicht gerade rein. Drinnen am Körper arbeiten.");
+  if (d.size === "k") plan.push("Er ist kleiner: Jab als Zaun, Uppercut wenn er reinduckt, nicht in die Ecke drücken lassen.");
+  if (counters[0]) plan.push(`Konter-Falle: Warte auf „${counters[0].label.toLowerCase()}“ und antworte mit dem Konter aus der Tabelle.`);
+  if (d.habits.includes("tired")) plan.push("Tempo: Ab Runde 3 Druck machen, da lässt er nach.");
+  const planOut = plan.slice(0, 5);
+
+  const drillKeys = [];
+  const add = k => { if (k && !drillKeys.includes(k)) drillKeys.push(k); };
+  counters.forEach(c => add(c.drill));
+  if (mixed) add("southpaw");
+  styles.forEach(([k]) => STYLES[k].drills.forEach(add));
+  return { styles, strengths, counters, plan: planOut, drills: drillKeys.slice(0, 4), mixed, limited, beginner };
+}
+
+function render(d) {
+  const a = analyse(d);
+  const box = document.getElementById("result");
+  const missing = [];
+  if (!d.pStance) missing.push("seine Auslage");
+  if (!d.movement) missing.push("wie er sich bewegt");
+  if (!d.output) missing.push("wie er schlägt");
+  if (!d.habits.length) missing.push("seine Gewohnheiten");
+
+  if (!a.styles.length && !a.counters.length) {
+    box.innerHTML = `<h2>Noch keine Analyse</h2><p class="hint" style="margin:0">Wähl oben aus, wie er sich bewegt, wie er schlägt und was er immer wieder macht. Dann auf „Analyse starten“ drücken.</p>`;
+    return;
+  }
+
+  const styleHtml = a.styles.length
+    ? a.styles.map(([k, w], i) => `<span class="style-badge">${STYLES[k].name}${a.styles.length > 1 ? `<small>${i === 0 ? "vor allem" : "mit Zügen"}</small>` : ""}</span>`).join("")
+    : `<span class="style-badge">Stil noch unklar</span>`;
+  const descHtml = a.styles.map(([k]) => `<p style="margin:0">${STYLES[k].desc}</p>`).join("");
+
+  const rows = a.counters.map(c => `<tr><td>${esc(c.label)}</td><td class="counter">${esc(c.counter)}<span class="warn">Achtung: ${esc(c.warn)}</span></td><td>${esc(c.why)}</td></tr>`).join("");
+
+  box.innerHTML = `
+    <div class="result-head"><h2>Deine Rundenkarte</h2><span class="label">Sofort-Analyse</span></div>
+    <div style="display:grid;gap:10px"><span class="label">Stil-Einschätzung</span><div class="styles">${styleHtml}</div>${descHtml}</div>
+    <div class="two">
+      <div class="box"><h3>Seine Stärken · hier aufpassen</h3><ul class="clean">${a.strengths.map(s => `<li>${esc(s)}</li>`).join("") || "<li>Noch zu wenig Infos</li>"}</ul></div>
+      <div class="box"><h3>Gameplan fürs nächste Sparring</h3><ol class="plan">${a.plan.map(p => `<li><span>${esc(p)}</span></li>`).join("")}</ol></div>
+    </div>
+    ${a.counters.length ? `<div style="display:grid;gap:10px"><h3>Seine Gewohnheiten · deine Konter</h3>
+      <div class="table-wrap"><table><thead><tr><th style="width:26%">Er macht …</th><th>Dein Konter</th><th style="width:28%">Warum es klappt</th></tr></thead><tbody>${rows}</tbody></table></div>
+      ${a.limited ? `<p class="note">Als Anfänger lieber auf drei Konter konzentrieren. Die restlichen Gewohnheiten kommen dran, wenn die sitzen.</p>` : ""}</div>`
+      : `<p class="note">Wähl seine Gewohnheiten aus, dann bekommst du für jede einen eigenen Konter.</p>`}
+    <div style="display:grid;gap:10px"><h3>Drills dafür</h3><div class="drills">${a.drills.map(k => `<div class="drill"><h3>${DRILLS[k].name}</h3><div class="meta">${DRILLS[k].meta}</div><div>${DRILLS[k].text}</div></div>`).join("")}</div></div>
+    ${missing.length ? `<p class="note">Noch genauer wird es, wenn du angibst: ${missing.join(", ")}.</p>` : ""}
+  `;
+}
+
+form.addEventListener("submit", e => { e.preventDefault(); render(readForm()); save(); document.getElementById("result").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start"}); });
+document.getElementById("btn-reset").addEventListener("click", () => { fillForm({habits: []}); save(); render(readForm()); });
+
+// ---------- Claude ----------
+let sample = null, turns = [], ctl = null, busy = false;
+const thread = document.getElementById("claude-thread");
+const statusEl = document.getElementById("claude-status");
+
+function md(src) {
+  const lines = esc(src).split("\n"); let out = "", list = null, table = null;
+  const inline = s => s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)(.+?)\*/g, "$1<em>$2</em>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  const closeList = () => { if (list) { out += `</${list}>`; list = null; } };
+  const closeTable = () => { if (table) { out += `<div class="table-wrap"><table>${table.map((r, i) => `<tr>${r.map(c => i === 0 ? `<th>${inline(c)}</th>` : `<td>${inline(c)}</td>`).join("")}</tr>`).join("")}</table></div>`; table = null; } };
+  for (const raw of lines) {
+    const l = raw.trim();
+    if (/^\|.*\|$/.test(l)) { closeList(); const cells = l.slice(1, -1).split("|").map(c => c.trim()); if (cells.every(c => /^:?-{2,}:?$/.test(c))) continue; (table = table || []).push(cells); continue; }
+    closeTable();
+    let m;
+    if ((m = l.match(/^(#{1,4})\s+(.*)/))) { closeList(); const lv = m[1].length <= 2 ? 2 : 3; out += `<h${lv}>${inline(m[2])}</h${lv}>`; }
+    else if ((m = l.match(/^[-*•]\s+(.*)/))) { if (list !== "ul") { closeList(); out += "<ul>"; list = "ul"; } out += `<li>${inline(m[1])}</li>`; }
+    else if ((m = l.match(/^\d+[.)]\s+(.*)/))) { if (list !== "ol") { closeList(); out += "<ol>"; list = "ol"; } out += `<li>${inline(m[1])}</li>`; }
+    else if (!l) { closeList(); }
+    else if (/^-{3,}$/.test(l)) { closeList(); }
+    else { closeList(); out += `<p>${inline(l)}</p>`; }
+  }
+  closeList(); closeTable(); return out;
+}
+
+function describe(d) {
+  const L = (k) => label(k, d[k]) || "keine Angabe";
+  return [
+    "BOXER (rote Ecke):",
+    `- Auslage: ${L("myStance")}`, `- Erfahrung: ${L("level")}`, `- Eigener Stil: ${L("myStyle")}`,
+    "SPARRINGSPARTNER (blaue Ecke):",
+    `- Auslage: ${L("pStance")}`, `- Größe/Reichweite im Vergleich: ${L("size")}`, `- Lieblingsdistanz: ${L("distance")}`,
+    `- Bewegung: ${L("movement")}`, `- Schläge: ${L("output")}`,
+    `- Gewohnheiten: ${d.habits.length ? d.habits.map(h => label("habits", h)).join("; ") : "keine ausgewählt"}`,
+    `- Freie Beschreibung: ${d.freetext || "keine"}`
+  ].join("\n");
+}
+
+const INSTRUCTIONS = `Du bist ein erfahrener Boxtrainer. Ein Boxer beschreibt dir seinen Sparringspartner. Antworte auf Deutsch, locker und direkt wie ein Trainer im Gym. Boxbegriffe (Jab, Cross, Hook, Slip, Roll, Pivot) sind ok.
+
+Aufgabe: Stil einordnen (Druckboxer, Distanzboxer, Konterboxer, Puncher, Boxer-Puncher, Volumen-Boxer, Clincher, Unorthodox – Mischformen ehrlich benennen), Schwächen und Gewohnheiten in konkrete Konter übersetzen, Gameplan, Drills.
+
+Regeln:
+- Prüfe bei jedem Konter die Auslagen (gleiche Auslage vs. Orthodox gegen Southpaw ändert Hand und Seite). Nenne konkret links/rechts für DIESEN Boxer.
+- Anfänger: max. 3 einfache Konter, Grundlagen zuerst.
+- Lieber 4 Konter, die genau zu den beschriebenen Gewohnheiten passen, als viele allgemeine Tipps.
+- Sparring ist Training, kein Kampf. Wenn jemand den Partner "fertigmachen" will, kurz an abgesprochene Intensität erinnern. Bei Kopfverletzungen/Schwindel: Pause und Arzt.
+- Keine Einleitung, kein Fazit-Gelaber.
+
+Format (Markdown):
+## Stil-Einschätzung
+## Seine Stärken – davor aufpassen
+## Schwächen & Gewohnheiten – deine Chancen
+(Tabelle: | Er macht ... | Dein Konter | Warum es klappt |)
+## Gameplan fürs nächste Sparring
+(3–5 nummerierte Punkte, kurz und merkbar)
+## Drills
+(2–4 Drills mit ### Name, Ablauf, Runden)
+## Noch besser wird die Analyse, wenn du mir sagst ...`;
+
+function addBubble(role, text) {
+  const div = document.createElement("div");
+  if (role === "user") { div.className = "turn-user"; div.textContent = text; }
+  else { div.className = "claude-out"; div.innerHTML = text ? md(text) : `<span class="status pulse">Claude denkt nach …</span>`; }
+  thread.append(div); return div;
+}
+
+const ERR = {
+  not_granted: "Du hast Claude für diese Seite nicht erlaubt. Die Sofort-Analyse funktioniert trotzdem.",
+  rate_limited: "Gerade zu viele Anfragen. Warte kurz und versuch es dann noch einmal.",
+  cancelled: "Gestoppt.",
+  prompt_too_large: "Die Unterhaltung ist zu lang geworden. Lade die Seite neu und starte eine neue Analyse.",
+  refused: "Claude wollte darauf nicht antworten. Formulier die Frage anders."
+};
+
+async function ask(userText, shown) {
+  if (!sample || busy) return;
+  busy = true; setBusy(true);
+  document.getElementById("claude-box").hidden = false;
+  if (shown) addBubble("user", shown);
+  const out = addBubble("assistant", "");
+  turns.push({role: "user", content: userText});
+  ctl = new AbortController();
+  statusEl.textContent = "läuft";
+  try {
+    const res = await sample(turns.slice(), { signal: ctl.signal, cache: false, onText: ({text}) => { out.innerHTML = md(text); } });
+    out.innerHTML = md(res.text);
+    turns.push({role: "assistant", content: res.text});
+    statusEl.textContent = res.truncated ? "Antwort wurde abgeschnitten" : "";
+    document.getElementById("follow").hidden = false;
+  } catch (e) {
+    turns.pop();
+    const msg = ERR[e && e.code] || "Das hat nicht geklappt. Versuch es gleich noch einmal.";
+    if (e && e.text) { out.innerHTML = md(e.text) + `<p class="hint">${esc(msg)}</p>`; }
+    else out.innerHTML = `<p class="hint">${esc(msg)}</p>`;
+    statusEl.textContent = "";
+    if (e && (e.code === "not_granted" || e.code === "sampling_disabled" || e.code === "capability_disabled")) {
+      document.getElementById("btn-claude").hidden = true; document.getElementById("follow").hidden = true;
+    } else if (turns.length) document.getElementById("follow").hidden = false;
+  } finally { busy = false; setBusy(false); ctl = null; }
+}
+function setBusy(b) {
+  ["btn-claude","btn-follow"].forEach(id => document.getElementById(id).disabled = b);
+  document.querySelectorAll("[data-q]").forEach(x => x.disabled = b);
+  document.getElementById("btn-stop").hidden = !b;
+}
+
+document.getElementById("btn-claude").addEventListener("click", () => {
+  const d = readForm(); render(d);
+  turns = []; thread.innerHTML = ""; document.getElementById("follow").hidden = true;
+  ask(INSTRUCTIONS + "\n\n" + describe(d));
+  document.getElementById("claude-box").scrollIntoView({behavior: "smooth", block: "start"});
+});
+document.getElementById("btn-follow").addEventListener("click", () => {
+  const t = document.getElementById("followtext"); const v = t.value.trim(); if (!v) { t.focus(); return; }
+  t.value = ""; ask(v, v);
+});
+document.querySelectorAll("[data-q]").forEach(b => b.addEventListener("click", () => ask(b.dataset.q, b.textContent)));
+document.getElementById("btn-stop").addEventListener("click", () => ctl && ctl.abort());
+
+// ---------- Start ----------
+fillForm(load() || EXAMPLE);
+render(readForm());
+(async () => {
+  try {
+    if (!window.claude || !window.claude.use) return;
+    sample = await window.claude.use("sample");
+    if (sample) document.getElementById("btn-claude").hidden = false;
+  } catch (e) {}
+})();
+</script>
