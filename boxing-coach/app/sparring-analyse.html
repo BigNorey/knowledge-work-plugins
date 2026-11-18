@@ -3,7 +3,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
 <style>
-/* Layout: zwei Ecken (rot = du, blau = Partner) nebeneinander, darunter Gewohnheiten, dann Ergebnis als "Rundenkarte" */
+/* Layout: Partner-Leiste oben, darunter Tabs (Analyse / Tagebuch / Trainingsplan / Rundentimer). Rot = du, Blau = Partner. */
 :root {
   --bg: #eef1f5;
   --surface: #ffffff;
@@ -16,6 +16,9 @@
   --blue: #1f4fa8;
   --blue-soft: #e7eefb;
   --ok: #1d7a4a;
+  --ok-soft: #e3f3ea;
+  --mid: #9a6a00;
+  --mid-soft: #fbf1d9;
   --font-display: "Anton", "Impact", "Arial Narrow", sans-serif;
   --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-label: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
@@ -23,20 +26,24 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0e121a; --surface: #161b26; --surface-2: #1c2230; --ink: #e8ecf3; --muted: #9ba5b7; --line: #2a3243;
-    --red: #ff5c61; --red-soft: #3a1c20; --blue: #7ea4ff; --blue-soft: #1a2541; --ok: #4fd08b; color-scheme: dark;
+    --red: #ff5c61; --red-soft: #3a1c20; --blue: #7ea4ff; --blue-soft: #1a2541; --ok: #4fd08b; --ok-soft: #15301f;
+    --mid: #f0b93a; --mid-soft: #33290f; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0e121a; --surface: #161b26; --surface-2: #1c2230; --ink: #e8ecf3; --muted: #9ba5b7; --line: #2a3243;
-  --red: #ff5c61; --red-soft: #3a1c20; --blue: #7ea4ff; --blue-soft: #1a2541; --ok: #4fd08b; color-scheme: dark;
+  --red: #ff5c61; --red-soft: #3a1c20; --blue: #7ea4ff; --blue-soft: #1a2541; --ok: #4fd08b; --ok-soft: #15301f;
+  --mid: #f0b93a; --mid-soft: #33290f; color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 0 48px;
 }
-.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 28px; }
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 22px; }
+.stack { display: grid; gap: 16px; min-width: 0; }
 header { padding-top: 28px; display: grid; gap: 10px; }
 .ropes { display: grid; gap: 5px; margin-bottom: 6px; }
 .ropes span { height: 3px; border-radius: 2px; background: var(--line); }
@@ -47,11 +54,27 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(2.4rem
 .label { font-family: var(--font-label); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; font-size: .82rem; color: var(--muted); }
 h2 { font-family: var(--font-label); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; font-size: 1.35rem; margin: 0; text-wrap: balance; }
 h3 { font-family: var(--font-label); font-weight: 700; font-size: 1.12rem; margin: 0; letter-spacing: .02em; }
+p { margin: 0; }
+
+/* Partner-Leiste */
+.partnerbar { display: grid; gap: 8px; }
+.partnerbar-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.pchip { flex: none; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-family: var(--font-label); font-weight: 700; font-size: 1.02rem; letter-spacing: .03em; text-transform: none; }
+.pchip .pdot { width: 10px; height: 10px; border-radius: 2px; background: var(--blue); opacity: .35; }
+.pchip[aria-pressed="true"] { border-color: var(--blue); background: var(--blue-soft); color: var(--blue); }
+.pchip[aria-pressed="true"] .pdot { opacity: 1; }
+.pchip.add { color: var(--muted); border-style: dashed; }
+.sync { font-size: .85rem; color: var(--muted); }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--line); overflow-x: auto; }
+.tab { flex: none; background: none; border: 0; border-bottom: 3px solid transparent; margin-bottom: -2px; border-radius: 0; padding: 10px 14px; color: var(--muted); font-size: 1.05rem; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--red); }
 
 .corners { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 760px) { .corners { grid-template-columns: 1fr; } }
-.corner { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 16px; align-content: start; min-width: 0; }
-.corner-head { display: flex; align-items: center; gap: 10px; }
+.corner, .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 16px; align-content: start; min-width: 0; }
+.corner-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .dot { width: 14px; height: 14px; border-radius: 3px; flex: none; }
 .red .dot { background: var(--red); } .blue .dot { background: var(--blue); }
 .corner.red { border-top: 4px solid var(--red); } .corner.blue { border-top: 4px solid var(--blue); }
@@ -66,10 +89,14 @@ h3 { font-family: var(--font-label); font-weight: 700; font-size: 1.12rem; margi
 .red .chip input:checked + span { background: var(--red); border-color: var(--red); color: #fff; }
 .chip input:focus-visible + span { outline: 2px solid var(--blue); outline-offset: 2px; }
 
-.habits { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; }
+.habits { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 16px; }
 .habits .chips { gap: 8px; }
-textarea { width: 100%; min-height: 96px; resize: vertical; font: inherit; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
-textarea:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+.details { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 760px) { .details { grid-template-columns: 1fr; } }
+textarea, input[type="text"], input[type="date"] { width: 100%; font: inherit; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; }
+textarea { min-height: 90px; resize: vertical; }
+input.name { font-family: var(--font-label); font-weight: 700; font-size: 1.15rem; max-width: 320px; }
+textarea:focus-visible, input:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 button { font: inherit; cursor: pointer; border-radius: 8px; padding: 11px 18px; border: 1px solid transparent; font-family: var(--font-label); font-weight: 700; font-size: 1.05rem; letter-spacing: .05em; text-transform: uppercase; }
@@ -77,6 +104,7 @@ button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .btn-main { background: var(--red); color: #fff; }
 .btn-claude { background: var(--surface); color: var(--ink); border-color: var(--ink); }
 .btn-ghost { background: transparent; color: var(--muted); border-color: var(--line); font-size: .9rem; padding: 8px 12px; }
+.btn-danger { background: transparent; color: var(--red); border-color: var(--red); font-size: .9rem; padding: 8px 12px; }
 button:disabled { opacity: .55; cursor: default; }
 .hint { color: var(--muted); font-size: .9rem; }
 
@@ -90,12 +118,19 @@ button:disabled { opacity: .55; cursor: default; }
 .box { background: var(--surface-2); border-radius: 8px; padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
 ul.clean { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
-table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: .95rem; }
+table { border-collapse: collapse; width: 100%; min-width: 680px; font-size: .95rem; }
 th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
 th { font-family: var(--font-label); text-transform: uppercase; letter-spacing: .06em; font-size: .8rem; color: var(--muted); background: var(--surface-2); }
 tr:last-child td { border-bottom: 0; }
 td.counter { font-weight: 600; }
 td .warn { display: block; color: var(--muted); font-size: .88rem; margin-top: 4px; font-weight: 400; }
+td .swap { display: block; color: var(--mid); font-size: .85rem; font-weight: 600; margin-bottom: 4px; }
+.pill { display: inline-block; font-family: var(--font-label); font-weight: 700; font-size: .8rem; letter-spacing: .05em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.mid { background: var(--mid-soft); color: var(--mid); }
+.pill.no { background: var(--red-soft); color: var(--red); }
+.pill.none { background: var(--surface-2); color: var(--muted); }
+.tally { font-variant-numeric: tabular-nums; font-size: .88rem; color: var(--muted); margin-top: 4px; display: block; }
 ol.plan { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; counter-reset: r; }
 ol.plan li { counter-increment: r; display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start; }
 ol.plan li::before { content: counter(r); font-family: var(--font-display); font-size: 1.3rem; line-height: 1.1; color: var(--red); text-align: center; }
@@ -103,6 +138,51 @@ ol.plan li::before { content: counter(r); font-family: var(--font-display); font
 .drill { border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 6px; align-content: start; }
 .drill .meta { font-family: var(--font-label); font-weight: 600; color: var(--red); letter-spacing: .04em; font-size: .9rem; }
 .note { border-left: 3px solid var(--red); padding: 4px 0 4px 12px; color: var(--muted); font-size: .93rem; }
+
+/* Tagebuch */
+.rate-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.rate-row:last-child { border-bottom: 0; }
+@media (max-width: 560px) { .rate-row { grid-template-columns: 1fr; } }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg label { position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.seg span { display: inline-block; padding: 6px 10px; font-size: .88rem; font-weight: 600; cursor: pointer; border-right: 1px solid var(--line); background: var(--surface-2); user-select: none; }
+.seg label:last-child span { border-right: 0; }
+.seg input:checked + span.ok { background: var(--ok); color: #fff; }
+.seg input:checked + span.mid { background: var(--mid); color: #fff; }
+.seg input:checked + span.no { background: var(--red); color: #fff; }
+.seg input:checked + span.none { background: var(--muted); color: var(--bg); }
+.seg input:focus-visible + span { outline: 2px solid var(--blue); outline-offset: -2px; }
+.form-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; }
+.form-row .field { min-width: 150px; }
+.entries { display: grid; gap: 12px; }
+.entry { border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 8px; }
+.entry-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.entry-res { display: flex; flex-wrap: wrap; gap: 6px; }
+.bar { height: 8px; border-radius: 4px; background: var(--surface-2); display: flex; overflow: hidden; }
+.bar i { display: block; height: 100%; }
+.bar .b-ok { background: var(--ok); } .bar .b-mid { background: var(--mid); } .bar .b-no { background: var(--red); }
+.bilanz { display: grid; gap: 12px; }
+.bilanz-row { display: grid; gap: 4px; }
+.bilanz-row .top { display: flex; justify-content: space-between; gap: 10px; font-size: .95rem; }
+
+/* Plan */
+.plan-table td:first-child { font-family: var(--font-label); font-weight: 700; white-space: nowrap; }
+.plan-table ul { margin: 0; padding-left: 1.1em; display: grid; gap: 3px; }
+.plan-table .min { font-variant-numeric: tabular-nums; color: var(--muted); }
+
+/* Timer */
+.timer { display: grid; gap: 16px; justify-items: center; text-align: center; padding: 26px 18px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); border-top: 6px solid var(--muted); }
+.timer.round { border-top-color: var(--red); }
+.timer.rest { border-top-color: var(--blue); }
+.phase { font-family: var(--font-label); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-size: 1.2rem; }
+.timer.round .phase { color: var(--red); } .timer.rest .phase { color: var(--blue); }
+.clock { font-family: var(--font-display); font-size: clamp(5rem, 24vw, 10rem); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.roundinfo { font-family: var(--font-label); font-weight: 600; color: var(--muted); letter-spacing: .06em; }
+.cue { font-size: clamp(1.1rem, 3.5vw, 1.5rem); font-weight: 600; max-width: 34ch; text-wrap: balance; }
+.cue-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; max-width: 46ch; text-align: left; }
+.cue-list li { display: grid; grid-template-columns: 28px 1fr; gap: 8px; font-size: 1.1rem; font-weight: 600; }
+.cue-list li b { font-family: var(--font-display); font-weight: 400; color: var(--blue); font-size: 1.3rem; line-height: 1.1; }
 
 .claude { display: grid; gap: 14px; }
 .claude-out { background: var(--surface-2); border-radius: 8px; padding: 16px 18px; min-width: 0; overflow-wrap: anywhere; }
@@ -123,60 +203,125 @@ footer { color: var(--muted); font-size: .88rem; max-width: 70ch; }
 <div class="wrap">
   <header>
     <div class="ropes" aria-hidden="true"><span></span><span></span><span></span></div>
-    <div class="label">Boxing Coach · Testversion</div>
+    <div class="label">Boxing Coach · Testversion 2</div>
     <h1>Sparring-Analyse</h1>
-    <p class="lede">Beschreib, wie dein Sparringspartner boxt. Du bekommst seinen Stil, Konter für jede seiner Gewohnheiten, einen Gameplan und passende Drills. Das Beispiel unten ist schon ausgefüllt, ändere es einfach.</p>
+    <p class="lede">Leg für jeden Sparringspartner ein Profil an. Du bekommst Konter, einen Gameplan, einen Trainingsplan und einen Rundentimer. Im Tagebuch trägst du ein, was geklappt hat, und die Konter passen sich an.</p>
   </header>
 
-  <form id="form" class="wrap" style="gap:16px" autocomplete="off">
-    <div class="corners">
-      <section class="corner red" aria-labelledby="h-du">
-        <div class="corner-head"><span class="dot"></span><h2 id="h-du">Du · rote Ecke</h2></div>
-        <div class="field"><span class="label">Deine Auslage</span>
-          <div class="chips" data-name="myStance"></div></div>
-        <div class="field"><span class="label">Erfahrung</span>
-          <div class="chips" data-name="level"></div></div>
-        <div class="field"><span class="label">Dein Stil (optional)</span>
-          <div class="chips" data-name="myStyle"></div></div>
+  <section class="partnerbar" aria-label="Sparringspartner">
+    <div class="partnerbar-row" id="partner-row"></div>
+    <span class="sync" id="sync">Wird geladen …</span>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="Bereiche">
+    <button class="tab" role="tab" id="t-analyse" data-tab="analyse">Analyse</button>
+    <button class="tab" role="tab" id="t-tagebuch" data-tab="tagebuch">Tagebuch</button>
+    <button class="tab" role="tab" id="t-plan" data-tab="plan">Trainingsplan</button>
+    <button class="tab" role="tab" id="t-timer" data-tab="timer">Rundentimer</button>
+  </nav>
+
+  <!-- ANALYSE -->
+  <div class="stack" id="p-analyse" role="tabpanel" aria-labelledby="t-analyse">
+    <form id="form" class="stack" autocomplete="off">
+      <div class="corners">
+        <section class="corner red" aria-labelledby="h-du">
+          <div class="corner-head"><span class="dot"></span><h2 id="h-du">Du · rote Ecke</h2></div>
+          <div class="field"><span class="label">Deine Auslage</span><div class="chips" data-name="myStance" data-scope="profile"></div></div>
+          <div class="field"><span class="label">Erfahrung</span><div class="chips" data-name="level" data-scope="profile"></div></div>
+          <div class="field"><span class="label">Dein Stil (optional)</span><div class="chips" data-name="myStyle" data-scope="profile"></div></div>
+          <p class="hint">Deine Angaben gelten für alle Partner.</p>
+        </section>
+
+        <section class="corner blue" aria-labelledby="h-partner">
+          <div class="corner-head"><span class="dot"></span><h2 id="h-partner">Partner · blaue Ecke</h2></div>
+          <div class="field"><label class="label" for="pname">Name</label><input type="text" class="name" id="pname" maxlength="40"></div>
+          <div class="field"><span class="label">Seine Auslage</span><div class="chips" data-name="pStance"></div></div>
+          <div class="field"><span class="label">Größe / Reichweite im Vergleich zu dir</span><div class="chips" data-name="size"></div></div>
+          <div class="field"><span class="label">Lieblingsdistanz</span><div class="chips" data-name="distance"></div></div>
+          <div class="field"><span class="label">Bewegung</span><div class="chips" data-name="movement"></div></div>
+          <div class="field"><span class="label">Schläge</span><div class="chips" data-name="output"></div></div>
+        </section>
+      </div>
+
+      <section class="habits" aria-labelledby="h-hab">
+        <div><h2 id="h-hab">Was macht er immer wieder?</h2><p class="hint" style="margin-top:4px">Wähl alles, was dir im Sparring auffällt. Für jede Gewohnheit bekommst du einen Konter.</p></div>
+        <div class="chips" data-name="habits" data-multi="1"></div>
+        <div class="details">
+          <div class="field"><span class="label">Wenn du ihn triffst …</span><div class="chips" data-name="hit"></div></div>
+          <div class="field"><span class="label">An den Seilen / in der Ecke …</span><div class="chips" data-name="ropes"></div></div>
+        </div>
+        <div class="field"><label class="label" for="combo">Seine Lieblingskombi</label><input type="text" id="combo" maxlength="80" placeholder="z. B. Jab – Cross – linker Haken zum Körper"></div>
+        <div class="field"><label class="label" for="freetext">Freie Beschreibung (für die Claude-Analyse)</label>
+          <textarea id="freetext" placeholder="z. B. wie er reagiert, wenn er müde wird, was bei dir bisher schiefgeht …"></textarea></div>
       </section>
 
-      <section class="corner blue" aria-labelledby="h-partner">
-        <div class="corner-head"><span class="dot"></span><h2 id="h-partner">Partner · blaue Ecke</h2></div>
-        <div class="field"><span class="label">Seine Auslage</span>
-          <div class="chips" data-name="pStance"></div></div>
-        <div class="field"><span class="label">Größe / Reichweite im Vergleich zu dir</span>
-          <div class="chips" data-name="size"></div></div>
-        <div class="field"><span class="label">Lieblingsdistanz</span>
-          <div class="chips" data-name="distance"></div></div>
-        <div class="field"><span class="label">Bewegung</span>
-          <div class="chips" data-name="movement"></div></div>
-        <div class="field"><span class="label">Schläge</span>
-          <div class="chips" data-name="output"></div></div>
-      </section>
-    </div>
+      <div class="actions">
+        <button type="button" class="btn-claude" id="btn-claude" hidden>Claude ausführlich fragen</button>
+        <button type="button" class="btn-ghost" id="btn-clear">Angaben leeren</button>
+        <button type="button" class="btn-danger" id="btn-del">Partner löschen</button>
+      </div>
+    </form>
 
-    <section class="habits" aria-labelledby="h-hab">
-      <div><h2 id="h-hab">Was macht er immer wieder?</h2><p class="hint" style="margin:4px 0 0">Wähl alles, was dir im Sparring auffällt. Daraus entstehen die Konter.</p></div>
-      <div class="chips" data-name="habits" data-multi="1"></div>
-      <div class="field"><label class="label" for="freetext">Freie Beschreibung (für die Claude-Analyse)</label>
-        <textarea id="freetext" name="freetext" placeholder="z. B. Lieblingskombi, wie er reagiert, wenn er getroffen wird, was bei dir bisher schiefgeht …"></textarea></div>
+    <section class="result" id="result" aria-live="polite"></section>
+  </div>
+
+  <!-- TAGEBUCH -->
+  <div class="stack" id="p-tagebuch" role="tabpanel" aria-labelledby="t-tagebuch" hidden>
+    <section class="panel">
+      <div class="result-head"><h2>Neuer Eintrag</h2><span class="label" id="diary-partner"></span></div>
+      <div class="form-row">
+        <div class="field"><label class="label" for="d-date">Datum</label><input type="date" id="d-date"></div>
+        <div class="field"><span class="label">Runden</span><div class="chips" id="d-rounds"></div></div>
+      </div>
+      <div class="field"><span class="label">Wie haben deine Konter geklappt?</span><div id="d-rates"></div></div>
+      <div class="field"><label class="label" for="d-notes">Was ist dir aufgefallen?</label><textarea id="d-notes" placeholder="z. B. Nach Runde 2 hat er angefangen zu doppeln. Mein Cross kam zu spät."></textarea></div>
+      <div class="actions"><button type="button" class="btn-main" id="d-save">Eintrag speichern</button><span class="status" id="d-msg" role="status"></span></div>
     </section>
+    <section class="panel" id="bilanz"></section>
+    <section class="panel" id="entries"></section>
+  </div>
 
-    <div class="actions">
-      <button type="submit" class="btn-main" id="btn-run">Analyse starten</button>
-      <button type="button" class="btn-claude" id="btn-claude" hidden>Claude ausführlich fragen</button>
-      <button type="button" class="btn-ghost" id="btn-reset">Alles leeren</button>
-    </div>
-  </form>
+  <!-- PLAN -->
+  <div class="stack" id="p-plan" role="tabpanel" aria-labelledby="t-plan" hidden>
+    <section class="panel" id="plan-cfg">
+      <h2>Deine Woche</h2>
+      <div class="details">
+        <div class="field"><span class="label">Trainingstage pro Woche</span><div class="chips" data-cfg="days"></div></div>
+        <div class="field"><span class="label">Dauer pro Einheit</span><div class="chips" data-cfg="minutes"></div></div>
+        <div class="field"><span class="label">Was hast du zur Verfügung?</span><div class="chips" data-cfg="equip" data-multi="1"></div></div>
+        <div class="field"><span class="label">Sparring am Ende der Woche?</span><div class="chips" data-cfg="spar"></div></div>
+      </div>
+    </section>
+    <section class="result" id="plan-out"></section>
+  </div>
 
-  <section class="result" id="result" aria-live="polite"></section>
+  <!-- TIMER -->
+  <div class="stack" id="p-timer" role="tabpanel" aria-labelledby="t-timer" hidden>
+    <section class="panel">
+      <div class="details">
+        <div class="field"><span class="label">Runden</span><div class="chips" data-tcfg="rounds"></div></div>
+        <div class="field"><span class="label">Rundenlänge</span><div class="chips" data-tcfg="len"></div></div>
+        <div class="field"><span class="label">Pause</span><div class="chips" data-tcfg="rest"></div></div>
+        <div class="field"><span class="label">Ton</span><div class="chips" data-tcfg="sound"></div></div>
+      </div>
+    </section>
+    <section class="timer" id="timer" aria-live="polite">
+      <div class="phase" id="t-phase">Bereit</div>
+      <div class="clock" id="t-clock">3:00</div>
+      <div class="roundinfo" id="t-info"></div>
+      <div id="t-cue"></div>
+      <div class="actions" style="justify-content:center">
+        <button type="button" class="btn-main" id="t-start">Start</button>
+        <button type="button" class="btn-ghost" id="t-reset">Zurücksetzen</button>
+      </div>
+    </section>
+  </div>
 
   <section class="result claude" id="claude-box" hidden>
     <div class="result-head"><h2>Analyse von Claude</h2><span class="status" id="claude-status"></span></div>
     <div id="claude-thread" class="claude" style="gap:12px"></div>
     <div class="follow" id="follow" hidden>
       <div class="quick">
-        <button type="button" class="btn-ghost" data-q="Mach mir einen Trainingsplan für die Woche bis zum nächsten Sparring. Ich trainiere 3-mal pro Woche je ca. 90 Minuten, mit Partner und Pratzen.">Trainingsplan für die Woche</button>
         <button type="button" class="btn-ghost" data-q="Erklär mir den wichtigsten Konter Schritt für Schritt: Füße, Hände, Timing und typische Fehler.">Wichtigsten Konter genau erklären</button>
         <button type="button" class="btn-ghost" data-q="Gib mir einen Plan Runde für Runde für ein Sparring über 4 Runden.">Plan pro Runde</button>
       </div>
@@ -190,6 +335,7 @@ footer { color: var(--muted); font-size: .88rem; max-width: 70ch; }
 </div>
 
 <script>
+// ================= Daten =================
 const OPTIONS = {
   myStance: [["o","Orthodox (links vorne)"],["s","Southpaw (rechts vorne)"]],
   level: [["a","Anfänger"],["f","Fortgeschritten"],["w","Wettkampf"]],
@@ -199,290 +345,714 @@ const OPTIONS = {
   distance: [["lang","Lang"],["mittel","Mittel"],["eng","Eng / Clinch"]],
   movement: [["vor","Drückt nach vorne"],["viel","Viel Beinarbeit"],["wartet","Wartet und kontert"],["steht","Steht viel"]],
   output: [["wenig","Wenige, harte Schläge"],["mittel","Mittel"],["viel","Viele Schläge / Kombis"],["wild","Wild, komische Winkel"]],
+  hit: [["konter","Kontert sofort"],["zurueck","Geht zurück"],["clinch","Clincht"],["wild","Wird wild"]],
+  ropes: [["seitlich","Kommt seitlich raus"],["deckt","Deckt und wartet"],["clinch","Clincht"],["wild","Schlägt sich wild raus"]],
   habits: []
 };
 
-// Gewohnheiten -> Konter. F = deine Führhand, S = deine Schlaghand (werden je nach Auslage ersetzt).
+// Konter: {F} = Führhand, {S} = Schlaghand des Boxers. alt = Alternative, wenn der Konter laut Tagebuch nicht klappt.
 const HABITS = [
   {id:"jab_drop", label:"Lässt nach dem Jab die Führhand fallen",
    counter:{same:"Slip leicht nach innen, dann {S}-Cross über seinen Jab. Alternative: Slip nach außen und {F}-Haken.", mixed:"{F}-Haken über seine fallende Führhand, oder {S}-Gerade durch die Mitte, sobald sein Jab zurückkommt."},
+   alt:"Erst seinen Jab parieren, dann mit eigenem Jab + Cross antworten, während seine Hand noch unten ist.",
    why:"Seine Kopfseite ist offen, solange die Hand zurückkommt.", warn:"Nicht zu früh starten. Erst den Jab kommen lassen.", drill:"slip"},
   {id:"jab_same", label:"Jabt immer im gleichen Rhythmus",
    counter:"Parry mit der {S} und sofort eigener Jab hinterher, oder Slip außen und {S} zum Körper.",
+   alt:"Seinem Jab mit deinem eigenen Jab zuvorkommen (Stopp-Jab), genau in seinem Rhythmus.",
    why:"Gleicher Rhythmus heißt, du kannst das Timing lernen.", warn:"Zwei, drei Jabs lang nur beobachten, dann zuschlagen.", drill:"slip"},
   {id:"telegraph", label:"Holt bei der Schlaghand aus",
    counter:"Kurzer {F}-Haken beim Ausholen. Oder unter dem Schlag wegrollen und mit Haken + Cross zurück.",
+   alt:"Beim Ausholen einen Schritt zurück und sofort mit Jab-Cross zurückkommen, wenn der Schlag vorbei ist.",
    why:"Ein kurzer Haken ist schneller als ein weiter Schwinger.", warn:"Kinn runter, Schulter hoch.", drill:"checkhook"},
   {id:"rear_drop", label:"Lässt beim Schlagen die hintere Hand fallen",
    counter:"Abwehren, dann {F}-Haken zum Kopf auf die offene Seite.",
+   alt:"Statt Haken: Jab zum Kopf genau in dem Moment, wo er schlägt.",
    why:"Die Lücke an seinem Kinn öffnet sich bei jedem Schlag.", warn:"Mit Pratzen üben, bis es automatisch kommt.", drill:"blockreturn"},
   {id:"straight_back", label:"Geht unter Druck gerade zurück",
    counter:"Doppel-Jab hinterher, dann {S}-Cross. Drück ihn Richtung Seile oder Ecke.",
+   alt:"Nicht sofort schlagen: erst mit Schritten in die Ecke treiben, dann dort arbeiten.",
    why:"Rückwärts ist er langsamer als du vorwärts, und hinten wartet das Seil.", warn:"Nicht blind nachrennen. Deckung oben, er kann kontern.", drill:"cutring"},
   {id:"same_side", label:"Weicht immer zur gleichen Seite aus",
    counter:"Die Seite zumachen: Schritt oder Haken genau dorthin, wo er hingeht.",
+   alt:"Finte zur anderen Seite, damit er früher ausweicht, dann den Weg abschneiden.",
    why:"Ring abschneiden statt hinterherlaufen.", warn:"Seitlich mitgehen, nicht gerade hinterher.", drill:"cutring"},
   {id:"head_forward", label:"Kommt mit dem Kopf zuerst / beugt sich vor",
    counter:"{S}-Uppercut beim Reinkommen, oder Pivot zur Seite + Haken.",
+   alt:"Mit beiden Händen seinen Kopf/Schultern kontrollieren, Pivot raus und dann schlagen.",
    why:"Ein vorgebeugter Kopf läuft genau in den Uppercut.", warn:"Uppercut kurz halten, nicht ausholen. Im Sparring auf Kopfstöße achten.", drill:"uppercut"},
   {id:"square", label:"Steht frontal / quadratisch",
    counter:"Jab + Cross gerade durch die Mitte, dazu Körperschläge zur Leber und zum Solarplexus.",
+   alt:"Winkel nehmen: einen Schritt zur Seite, dann Haken. Frontal kann er dich mit beiden Händen gut erreichen.",
    why:"Frontal ist er ein großes Ziel, der Kopf steht auf der Mittellinie.", warn:"Frontal kann er dafür mit beiden Händen gleich hart schlagen.", drill:"obenunten"},
   {id:"chin_up", label:"Kinn hoch",
    counter:"Gerade Schläge (Jab-Cross) und Uppercuts.",
+   alt:"Erst zum Körper, damit er sich zusammenzieht, dann gerade zum Kopf.",
    why:"Mit hohem Kinn steht er weniger stabil.", warn:"Im Sparring kontrolliert treffen.", drill:"uppercut"},
   {id:"duck_same", label:"Duckt oder slippt immer gleich",
    counter:"Jab antäuschen und den Haken auf die Seite schlagen, wohin sein Kopf geht.",
+   alt:"Uppercut statt Haken, wenn er beim Ducken tief geht.",
    why:"Du schickst seinen Kopf hin, der Haken wartet schon.", warn:"Die Finte muss echt aussehen.", drill:"finten"},
   {id:"body_open", label:"Hohe Deckung, Körper offen",
    counter:"Jab zum Kopf (die Hände gehen hoch), dann {F}-Haken zum Körper.",
+   alt:"Jab zum Körper als erster Schlag, dann Cross zum Kopf.",
    why:"Der Oben-Unten-Wechsel öffnet ihn.", warn:"Beim Körperschlag in die Knie gehen, nicht nur bücken.", drill:"obenunten"},
   {id:"guard_low", label:"Deckung tief",
    counter:"Jab und Cross zum Kopf, Haken über die Deckung.",
+   alt:"Finten statt echte Schläge: lock seinen Konter raus und konter den.",
    why:"Der Kopf ist frei.", warn:"Tiefe Deckung heißt oft Konterboxer. Deine eigene Deckung bleibt oben.", drill:"kontaufkont"},
   {id:"singles", label:"Schlägt nur Einzelschläge",
    counter:"Sofort nach seinem Schlag zurück (Block & Return).",
+   alt:"Seinem Einzelschlag ausweichen (Slip) statt blocken und aus der Bewegung kontern.",
    why:"Nach jedem Schlag macht er eine Pause. Das ist dein Fenster.", warn:"Innerhalb einer halben Sekunde antworten.", drill:"blockreturn"},
   {id:"long_combos", label:"Schlägt lange Kombis",
    counter:"Eng decken, dann am Ende der Kombi kontern oder mit Winkel rausgehen.",
+   alt:"Die Kombi früh unterbrechen: nach seinem ersten Schlag sofort clinchen oder dazwischen jabben.",
    why:"Am Ende der Kombi ist er offen und holt Luft.", warn:"Nicht die ganze Kombi stehen bleiben und einstecken.", drill:"blockreturn"},
   {id:"tired", label:"Wird in späteren Runden müde",
    counter:"Runde 1 und 2 viel bewegen und Tempo hochhalten, ab Runde 3 Druck machen.",
+   alt:"Schon ab Runde 1 zum Körper arbeiten. Das macht ihn noch schneller müde.",
    why:"So nutzt du deine bessere Kondition.", warn:"Du musst selbst die Luft dafür haben.", drill:"kondition"},
   {id:"body_reacts", label:"Nimmt bei Körpertreffern die Hände runter",
    counter:"Doppelhaken: {F}-Haken zum Körper, dann sofort {F}-Haken zum Kopf.",
+   alt:"Körper-Cross, dann {F}-Haken zum Kopf.",
    why:"Die Hände gehen runter, der Kopf wird frei.", warn:"Der zweite Haken muss schnell kommen.", drill:"obenunten"},
   {id:"pulls_back", label:"Lehnt sich beim Ausweichen zurück",
    counter:"Doppel-Jab (der zweite trifft) oder Jab, Schritt, Cross.",
+   alt:"Zum Körper schlagen: der Körper kann nicht zurücklehnen.",
    why:"Wer zurücklehnt, kommt danach wieder nach vorne.", warn:"Achte auf seinen Konter, wenn er wieder nach vorne kommt.", drill:"finten"},
   {id:"clinches", label:"Clincht sofort, wenn es eng wird",
    counter:"Kurz rein, 2–3 Schläge, dann mit Winkel raus, bevor er greift.",
+   alt:"Ganz auf Distanz boxen: nur Jab und Cross, gar nicht erst eng werden.",
    why:"Gerade rein und raus gibt ihm die Zeit zum Festhalten.", warn:"Wenn er dich hat: Ellbogen nach innen, Hände freikämpfen.", drill:"wall"},
   {id:"switches", label:"Wechselt die Auslage",
    counter:"Beobachte, wann er wechselt, und greif genau in dem Moment an.",
+   alt:"Ignoriere den Wechsel: bleib bei geraden Schlägen durch die Mitte, die funktionieren gegen beide Auslagen.",
    why:"Beim Wechsel steht er kurz unsauber.", warn:"Erst Muster erkennen, dann zuschlagen.", drill:"finten"},
   {id:"head_still", label:"Kopf bleibt nach dem Schlag in der Mitte",
    counter:"Konter direkt auf die Mittellinie mit Jab oder Cross.",
-   why:"Er bewegt den Kopf nach dem Schlag nicht weg.", warn:"Gerade schlagen, nicht ausholen.", drill:"blockreturn"}
+   alt:"Erst seinen Schlag blocken, dann sofort Doppel-Jab.",
+   why:"Er bewegt den Kopf nach dem Schlag nicht weg.", warn:"Gerade schlagen, nicht ausholen.", drill:"blockreturn"},
+  {id:"overhand", label:"Wirft gerne Overhand / Schwinger",
+   counter:"Kurzer {S}-Cross gerade durch die Mitte, während er ausholt. Oder unter dem Schwinger durchrollen und Körperhaken.",
+   alt:"Hand hoch an die Schläfe (Block), dann sofort {F}-Haken zurück.",
+   why:"Gerade ist kürzer als rund. Du bist zuerst da.", warn:"Nicht zurückweichen, wenn der Schwinger kommt, sonst trifft er dich am Ende.", drill:"checkhook"},
+  {id:"body_worker", label:"Arbeitet viel zum Körper",
+   counter:"Ellbogen eng, beim Körperschlag sofort Uppercut oder Haken zum Kopf, sein Kopf ist dann tief und offen.",
+   alt:"Distanz halten: mit Jab weghalten, damit er gar nicht nah genug für Körperschläge kommt.",
+   why:"Wer zum Körper schlägt, nimmt seinen Kopf mit nach unten.", warn:"Bauch anspannen, nicht die Deckung runternehmen.", drill:"uppercut"},
+  {id:"lead_hook", label:"Hat einen gefährlichen Führhand-Haken",
+   counter:"Rechte Hand (bzw. Schlaghand) bleibt eng am Kinn. Unter dem Haken durchrollen und mit Cross zurück.",
+   alt:"Außerhalb seiner Hakenreichweite bleiben und ihn mit Jabs beschäftigen.",
+   why:"Sein Haken reißt seine Deckung auf der gleichen Seite auf.", warn:"Nie mit der hinteren Hand unten jabben.", drill:"kontaufkont"}
 ];
 OPTIONS.habits = HABITS.map(h => [h.id, h.label]);
+
+const DETAIL = {
+  hit: {
+    konter:{label:"Kontert sofort, wenn du triffst", counter:"Nach deinem Treffer nicht stehen bleiben: Kopf bewegen oder mit Winkel raus. Dann seinen Konter kontern.", alt:"Nach deinem Treffer direkt in den Clinch oder zwei Schritte raus.", why:"Sein Konter kommt immer. Wenn du weißt, dass er kommt, wird er zu deiner Chance.", warn:"Nie mit der Hand unten nach einem Treffer.", drill:"kontaufkont"},
+    zurueck:{label:"Geht zurück, wenn du triffst", counter:"Nachsetzen: Doppel-Jab und Cross, solange er rückwärts geht.", alt:"Nicht nachrennen, sondern die Seite zumachen und ihn in die Ecke treiben.", why:"Ein Treffer bringt ihn aus dem Rhythmus, das ist der Moment.", warn:"Deckung oben, nicht wild hinterher.", drill:"cutring"},
+    clinch:{label:"Clincht, wenn du triffst", counter:"Nach deinem Treffer sofort mit Winkel raus, bevor er greift.", alt:"Treffer setzen und direkt einen Schritt zurück auf Distanz.", why:"Er braucht den Clinch, um sich zu erholen. Gib ihm die Zeit nicht.", warn:"Nicht stehen bleiben und bewundern, was du getroffen hast.", drill:"wall"},
+    wild:{label:"Wird wild, wenn du triffst", counter:"Ruhig bleiben, eng decken, und mit geraden Schlägen in seine wilden Schläge kontern.", alt:"Raus aus der Distanz und warten, bis er sich ausgetobt hat. Dann wieder arbeiten.", why:"Wilde Schläge sind weit und lassen ihn offen.", warn:"Nicht mitprügeln. Das ist sein Spiel, nicht deins.", drill:"blockreturn"}
+  },
+  ropes: {
+    seitlich:{label:"Kommt an den Seilen seitlich raus", counter:"Erst mit dem Fuß seine Fluchtseite zumachen, dann schlagen.", alt:"Haken genau auf die Seite, wohin er raus will.", why:"Wenn der Weg zu ist, muss er stehen bleiben.", warn:"Nicht frontal vor ihn stellen, sonst geht er links oder rechts vorbei.", drill:"cutring"},
+    deckt:{label:"Deckt an den Seilen und wartet", counter:"Oben-Unten wechseln: Körper bearbeiten, bis die Deckung runtergeht, dann zum Kopf.", alt:"Finten und Geduld: Er wartet auf deinen Fehler. Lass ihn zuerst schlagen.", why:"Eine geschlossene Deckung öffnet sich, wenn der Körper getroffen wird.", warn:"Achte auf seinen Konter, wenn du zu lange vor ihm stehst.", drill:"obenunten"},
+    clinch:{label:"Clincht an den Seilen", counter:"Kurze Schläge setzen, aber nicht zu nah ran. Arme frei halten.", alt:"Abstand halten und ihn mit Jabs an den Seilen festnageln.", why:"Mit Abstand kann er dich nicht festhalten.", warn:"Ellbogen innen, sonst greift er die Arme.", drill:"wall"},
+    wild:{label:"Schlägt sich an den Seilen wild raus", counter:"Nicht reinlaufen: einen Schritt Abstand halten und kontern, wenn er rausschwingt.", alt:"Ihn rauslassen und seitlich mit Haken empfangen.", why:"Wer wild rausschwingt, ist danach offen.", warn:"Genau dann gefährlich, wenn du zu nah stehst.", drill:"checkhook"}
+  }
+};
 
 const STYLES = {
   druck:{name:"Druckboxer", desc:"Läuft ständig nach vorne, will dich an die Seile drücken und auf kurze Distanz arbeiten.",
     str:["Hohes Tempo und viel Druck","Starke Körperarbeit","Zermürbt dich konditionell"],
     plan:["Nicht gerade zurückgehen. Seitlich weg, Pivot, immer Richtung Ringmitte.","Jab als Stopp-Schlag, wenn er reinkommt.","Check-Hook beim Reinkommen: Haken und Pivot zur Seite."],
-    drills:["checkhook","wall"]},
+    drills:["checkhook","wall"], cond:"Intervalle"},
   distanz:{name:"Distanzboxer", desc:"Viel Beinarbeit und ein langer Jab. Er punktet und geht weg.",
     str:["Reichweite und Timing","Auf Distanz schwer zu treffen"],
     plan:["Ring abschneiden: seitlich mitgehen statt hinterherlaufen.","Unter oder neben seinem Jab reinkommen und sofort arbeiten.","Körper treffen, das macht seine Beine langsam."],
-    drills:["cutring","slip"]},
+    drills:["cutring","slip"], cond:"Beinarbeit"},
   konter:{name:"Konterboxer", desc:"Wartet geduldig und bestraft jeden Fehler mit scharfen Kontern.",
     str:["Sehr gutes Timing und Reflexe","Bestraft unsauberes Angreifen"],
     plan:["Viele Finten. Lock ihn raus und konter seinen Konter.","Hand nach jedem Schlag sofort zurück, Kopf bewegen.","Rhythmus brechen: mal schnell, mal langsam."],
-    drills:["finten","kontaufkont"]},
+    drills:["finten","kontaufkont"], cond:"Reaktion"},
   power:{name:"Puncher", desc:"Wenige, aber harte Schläge, oft weit ausgeholt. Er sucht den einen großen Treffer.",
     str:["Viel Power, ein Treffer kann reichen"],
     plan:["Bewegen, nicht in seiner Lieblingsdistanz stehen bleiben.","Kurz und gerade schlagen, das schlägt weit und rund.","Viele schnelle Schläge, dann raus."],
-    drills:["checkhook","blockreturn"]},
+    drills:["checkhook","blockreturn"], cond:"Beinarbeit"},
   volumen:{name:"Volumen-Boxer", desc:"Schlägt ständig und hat eine hohe Schlagzahl, nicht immer hart.",
     str:["Viele Treffer, hohe Punktzahl","Schwer, selbst in den Rhythmus zu kommen"],
     plan:["Den ersten Schlag eng abwehren, dann in die Kombi kontern.","Winkel nehmen, damit seine Kombi ins Leere geht.","Clinch, um seinen Rhythmus zu brechen."],
-    drills:["blockreturn","kondition"]},
+    drills:["blockreturn","kondition"], cond:"Intervalle"},
   clinch:{name:"Clincher", desc:"Hält fest, sobald es eng wird, und bricht deinen Rhythmus.",
     str:["Nimmt dir den Rhythmus","Macht dich auf kurzer Distanz müde"],
     plan:["Auf Distanz bleiben mit Jab und Beinarbeit.","Kurz rein, Schläge setzen, mit Winkel sofort raus."],
-    drills:["wall","cutring"]},
+    drills:["wall","cutring"], cond:"Beinarbeit"},
   wild:{name:"Unorthodox", desc:"Komische Winkel, schwer zu lesen, oft wenig saubere Technik.",
     str:["Unberechenbar","Schläge aus ungewohnten Winkeln"],
     plan:["Ruhig bleiben, Deckung eng.","Gerade schlagen, das ist der schnellste Weg.","Erste Runde beobachten, auch er hat Muster."],
-    drills:["blockreturn","slip"]},
+    drills:["blockreturn","slip"], cond:"Reaktion"},
   allround:{name:"Boxer-Puncher", desc:"Kann auf Distanz boxen und hart treffen, ziemlich komplett.",
     str:["Kaum offensichtliche Schwächen","Passt sich an"],
     plan:["Finde heraus, was er lieber macht, und zwing ihn ins Gegenteil.","Viele Finten, viel Bewegung.","Kondition ausspielen."],
-    drills:["finten","kondition"]}
+    drills:["finten","kondition"], cond:"Intervalle"}
+};
+
+const COND = {
+  Intervalle:"Sandsack-Intervalle: 30 s maximales Tempo, 30 s locker. So hältst du seinem Druck stand.",
+  Beinarbeit:"Beinarbeit-Runden: 3 × 3 Min nur bewegen, Winkel, Pivots, Ring abschneiden. Seilspringen als Alternative.",
+  Reaktion:"Reaktion: Reflexball oder Partner-Reflexdrill, 4 × 2 Min. Danach Seilspringen."
 };
 
 const DRILLS = {
-  slip:{name:"Slip-Counter", meta:"Partner · 3 × 2 Min", text:"Partner schlägt langsam Jabs, du slippst und konterst sofort. Jede Runde etwas schneller. Später variiert er zwischen Jab und Doppel-Jab."},
-  checkhook:{name:"Check-Hook", meta:"Pratzen/Partner · 3 × 2 Min", text:"Partner kommt mit Druck nach vorne, du setzt den Führhand-Haken und pivotierst zur Seite. Am Ende stehst du neben ihm, nicht vor ihm."},
-  cutring:{name:"Ring abschneiden", meta:"Partner · 3 × 2 Min", text:"Partner bewegt sich nur, du bringst ihn in eine Ecke, mit seitlichen Schritten statt hinterherlaufen. Erst ohne Schläge, dann mit Jab."},
-  blockreturn:{name:"Block & Return", meta:"Partner · 3 × 2 Min", text:"Partner schlägt eine Kombi, du blockst und schlägst zurück, bevor er sich sortiert hat. Ziel: Antwort unter einer halben Sekunde."},
-  finten:{name:"Finten-Drill", meta:"Schatten/Partner · 3 × 3 Min", text:"Jede Kombi beginnt mit einer Finte (Jab, Schulter, Schritt). Achte auf seine Reaktion und nutze sie."},
-  obenunten:{name:"Oben-Unten", meta:"Sandsack/Pratzen · 3 × 3 Min", text:"Haken Körper und dann Haken Kopf, Jab-Cross zum Körper, dann Haken zum Kopf. In die Knie gehen statt bücken."},
-  uppercut:{name:"Uppercut-Timing", meta:"Pratzen · 3 × 2 Min", text:"Trainer simuliert das Vorbeugen und Reinkommen, du antwortest mit Uppercut und Haken. Kurz und ohne Ausholen."},
-  wall:{name:"Raus von den Seilen", meta:"Schattenboxen · 3 × 2 Min", text:"Rücken nah an Wand oder Seilen: mit Pivot und Winkel rauskommen, nie gerade zurück."},
-  kontaufkont:{name:"Konter auf den Konter", meta:"Partner · 3 × 2 Min", text:"Du jabst, Partner kontert mit dem Cross, du rollst darunter weg und kommst mit Haken und Cross zurück."},
-  kondition:{name:"Tempo-Intervalle", meta:"Sandsack · 6 × 1 Min", text:"30 Sekunden maximales Tempo, 30 Sekunden locker. So hältst du sein Tempo in den späten Runden mit."},
-  southpaw:{name:"Führfuß außen", meta:"Partner · 3 × 2 Min", text:"Gegen die andere Auslage: nur den Führfuß außen gewinnen, erst ohne Schläge. Dann jedes Mal, wenn du außen bist, die Schlaghand gerade."}
+  slip:{name:"Slip-Counter", meta:"Partner · 3 × 2 Min", equip:["partner","pratzen"], text:"Partner schlägt langsam Jabs, du slippst und konterst sofort. Jede Runde etwas schneller. Später variiert er zwischen Jab und Doppel-Jab.", solo:"Slip-Linie: Schnur auf Kopfhöhe spannen, unter imaginären Jabs durch und sofort kontern."},
+  checkhook:{name:"Check-Hook", meta:"Pratzen/Partner · 3 × 2 Min", equip:["partner","pratzen"], text:"Partner kommt mit Druck nach vorne, du setzt den Führhand-Haken und pivotierst zur Seite. Am Ende stehst du neben ihm, nicht vor ihm.", solo:"Schattenboxen: Stell dir vor, wie er reinkommt. Haken und Pivot, 3 × 2 Min."},
+  cutring:{name:"Ring abschneiden", meta:"Partner · 3 × 2 Min", equip:["partner"], text:"Partner bewegt sich nur, du bringst ihn in eine Ecke, mit seitlichen Schritten statt hinterherlaufen. Erst ohne Schläge, dann mit Jab.", solo:"Schatten: vier Ecken markieren und seitliches Schneiden üben, nie gerade hinterher."},
+  blockreturn:{name:"Block & Return", meta:"Partner · 3 × 2 Min", equip:["partner","pratzen"], text:"Partner schlägt eine Kombi, du blockst und schlägst zurück, bevor er sich sortiert hat. Ziel: Antwort unter einer halben Sekunde.", solo:"Sandsack: Block andeuten, dann sofort 2–3 Schläge. 3 × 2 Min."},
+  finten:{name:"Finten-Drill", meta:"Schatten/Partner · 3 × 3 Min", equip:["partner","schatten"], text:"Jede Kombi beginnt mit einer Finte (Jab, Schulter, Schritt). Achte auf seine Reaktion und nutze sie.", solo:"Schattenboxen am Spiegel: Jede Kombi startet mit einer Finte."},
+  obenunten:{name:"Oben-Unten", meta:"Sandsack/Pratzen · 3 × 3 Min", equip:["sandsack","pratzen"], text:"Haken Körper und dann Haken Kopf, Jab-Cross zum Körper, dann Haken zum Kopf. In die Knie gehen statt bücken.", solo:"Schatten: Oben-Unten-Kombis, bei jedem Körperschlag tief in die Knie."},
+  uppercut:{name:"Uppercut-Timing", meta:"Pratzen · 3 × 2 Min", equip:["pratzen","sandsack"], text:"Trainer simuliert das Vorbeugen und Reinkommen, du antwortest mit Uppercut und Haken. Kurz und ohne Ausholen.", solo:"Schatten: kurze Uppercuts aus der Beuge, nie ausholen."},
+  wall:{name:"Raus von den Seilen", meta:"Schattenboxen · 3 × 2 Min", equip:["schatten"], text:"Rücken nah an Wand oder Seilen: mit Pivot und Winkel rauskommen, nie gerade zurück.", solo:"Rücken an der Wand: mit Pivot und Winkel raus, nie gerade zurück."},
+  kontaufkont:{name:"Konter auf den Konter", meta:"Partner · 3 × 2 Min", equip:["partner"], text:"Du jabst, Partner kontert mit dem Cross, du rollst darunter weg und kommst mit Haken und Cross zurück.", solo:"Schatten: Jab, unter dem gedachten Cross wegrollen, Haken-Cross zurück."},
+  kondition:{name:"Tempo-Intervalle", meta:"Sandsack · 6 × 1 Min", equip:["sandsack","schatten"], text:"30 Sekunden maximales Tempo, 30 Sekunden locker. So hältst du sein Tempo in den späten Runden mit.", solo:"Schatten oder Seilspringen: 30 s Vollgas, 30 s locker."},
+  southpaw:{name:"Führfuß außen", meta:"Partner · 3 × 2 Min", equip:["partner"], text:"Gegen die andere Auslage: nur den Führfuß außen gewinnen, erst ohne Schläge. Dann jedes Mal, wenn du außen bist, die Schlaghand gerade.", solo:"Schatten: Schritt mit dem Führfuß nach außen, dann Schlaghand gerade."}
 };
 
-const EXAMPLE = {myStance:"o", level:"f", myStyle:"druck", pStance:"o", size:"g", distance:"lang", movement:"viel", output:"mittel",
-  habits:["jab_drop","straight_back","tired"],
+const EXAMPLE_FORM = {pStance:"o", size:"g", distance:"lang", movement:"viel", output:"mittel", hit:"zurueck", ropes:"seitlich",
+  habits:["jab_drop","straight_back","tired"], combo:"Jab – Jab – Cross",
   freetext:"Er ist ca. 10 cm größer, jabt viel und hält mich damit weg. Wenn ich reingehe, nimmt er mich mit Jab-Cross. In Runde 3 wird er langsamer und lässt die Hände hängen."};
+const EMPTY_FORM = {pStance:"", size:"", distance:"", movement:"", output:"", hit:"", ropes:"", habits:[], combo:"", freetext:""};
 
-// ---------- Formular bauen ----------
+// ================= Zustand & Speicher =================
+const uid6 = () => Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+let state = {
+  profile: {myStance:"o", level:"f", myStyle:"", plan:{days:"3", minutes:"90", equip:["partner","pratzen","sandsack"], spar:"ja"}, timer:{rounds:"4", len:"3", rest:"60", sound:"an"}},
+  partners: [], sessions: [], activeId: null, tab: "analyse"
+};
+function examplePartner() { return {id:"beispiel", name:"Beispiel-Partner", form: JSON.parse(JSON.stringify(EXAMPLE_FORM)), example:true}; }
+
+const LKEY = "sparring-analyse-v2";
+const Store = {
+  mode: "local", db: null, base: null, timers: {},
+  saveLocal() { try { localStorage.setItem(LKEY, JSON.stringify({profile: state.profile, partners: state.partners.filter(p => !p.example), sessions: state.sessions, activeId: state.activeId, tab: state.tab})); } catch (e) {} },
+  loadLocal() {
+    try {
+      const s = JSON.parse(localStorage.getItem(LKEY) || "null"); if (s) return s;
+      const v1 = JSON.parse(localStorage.getItem("sparring-analyse-v1") || "null");
+      if (v1) { const form = Object.assign({}, EMPTY_FORM, v1); const p = {id: uid6(), name: "Mein Partner", form}; delete form.myStance; delete form.level; delete form.myStyle;
+        return {profile: {myStance: v1.myStance || "o", level: v1.level || "f", myStyle: v1.myStyle || ""}, partners: [p], sessions: [], activeId: p.id}; }
+    } catch (e) {}
+    return null;
+  },
+  async connect() {
+    if (!window.claude || !window.claude.use) return false;
+    try {
+      const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+      if (!db || !user) return false;
+      const id = await user.id(); if (!id) return false;
+      this.db = db; this.base = "data/users/" + id + "/box"; return true;
+    } catch (e) { return false; }
+  },
+  async loadDb() {
+    const t = new Promise((_, rej) => setTimeout(() => rej({code: "timeout"}), 10000));
+    const go = (async () => {
+      const [prof, ps, ss] = await Promise.all([
+        this.db.doc(this.base).get(),
+        this.db.collection(this.base + "/partners").get(),
+        this.db.collection(this.base + "/sessions").get()
+      ]);
+      return {
+        profile: prof.exists ? (prof.data().profile || null) : null,
+        activeId: prof.exists ? prof.data().activeId : null,
+        partners: ps.docs.map(d => Object.assign({id: d.id}, d.data())).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)),
+        sessions: ss.docs.map(d => Object.assign({id: d.id}, d.data()))
+      };
+    })();
+    return Promise.race([go, t]);
+  },
+  later(key, fn, ms = 700) { clearTimeout(this.timers[key]); this.timers[key] = setTimeout(fn, ms); },
+  async run(fn) {
+    this.saveLocal();
+    if (this.mode !== "db") return;
+    try { await fn(); setSync(); } catch (e) { setSync("Speichern hat nicht geklappt. Deine Änderung ist erst mal nur in diesem Browser."); }
+  },
+  saveProfile() { this.later("profile", () => this.run(() => this.db.doc(this.base).set({profile: state.profile, activeId: state.activeId}))); },
+  savePartner(p) { if (p.example) return; this.later("p" + p.id, () => this.run(() => this.db.doc(this.base + "/partners/" + p.id).set({name: p.name, form: p.form, createdAt: p.createdAt || Date.now()}))); },
+  deletePartner(id) { this.run(async () => { await this.db.doc(this.base + "/partners/" + id).delete(); for (const s of state._deletedSessions || []) await this.db.doc(this.base + "/sessions/" + s).delete(); state._deletedSessions = []; }); },
+  saveSession(s) { const {id, ...rest} = s; this.run(() => this.db.doc(this.base + "/sessions/" + id).set(rest)); },
+  deleteSession(id) { this.run(() => this.db.doc(this.base + "/sessions/" + id).delete()); }
+};
+function setSync(msg) {
+  document.getElementById("sync").textContent = msg || (Store.mode === "db" ? "In deinem Claude-Konto gespeichert." : "In diesem Browser gespeichert.");
+}
+
+const active = () => state.partners.find(p => p.id === state.activeId) || state.partners[0];
+function materialize(p) {
+  // Beispiel wird zum echten Partner, sobald man es ändert
+  if (p.example) { delete p.example; p.id = uid6(); p.createdAt = Date.now(); state.activeId = p.id; Store.saveProfile(); renderPartners(); }
+}
+
+// ================= Formular =================
 const form = document.getElementById("form");
-document.querySelectorAll(".chips[data-name]").forEach(box => {
-  const name = box.dataset.name, multi = !!box.dataset.multi;
-  OPTIONS[name].forEach(([v, l]) => {
+function buildChips(box, name, opts, multi, attr = "name") {
+  opts.forEach(([v, l]) => {
     const lab = document.createElement("label"); lab.className = "chip";
-    const inp = document.createElement("input"); inp.type = multi ? "checkbox" : "radio"; inp.name = name; inp.value = v; inp.id = name + "-" + v;
-    if (!multi) inp.addEventListener("click", e => { if (inp.dataset.was === "1") { inp.checked = false; inp.dataset.was = ""; save(); } else { form.querySelectorAll(`input[name="${name}"]`).forEach(i => i.dataset.was = ""); inp.dataset.was = "1"; } });
+    const inp = document.createElement("input"); inp.type = multi ? "checkbox" : "radio"; inp.name = (attr === "name" ? "" : attr + "-") + name; inp.value = v; inp.id = inp.name + "-" + v;
+    if (!multi) inp.addEventListener("click", () => {
+      if (inp.dataset.was === "1") { inp.checked = false; inp.dataset.was = ""; inp.dispatchEvent(new Event("change", {bubbles: true})); }
+      else { document.querySelectorAll(`input[name="${inp.name}"]`).forEach(i => i.dataset.was = ""); inp.dataset.was = "1"; }
+    });
     const sp = document.createElement("span"); sp.textContent = l;
     lab.append(inp, sp); box.append(lab);
   });
+}
+document.querySelectorAll(".chips[data-name]").forEach(box => buildChips(box, box.dataset.name, OPTIONS[box.dataset.name], !!box.dataset.multi));
+
+const PROFILE_KEYS = ["myStance", "level", "myStyle"];
+const FORM_KEYS = ["pStance", "size", "distance", "movement", "output", "hit", "ropes"];
+const radioVal = n => (form.querySelector(`input[name="${n}"]:checked`) || {}).value || "";
+function setRadio(n, v) { form.querySelectorAll(`input[name="${n}"]`).forEach(i => { i.checked = i.value === v; i.dataset.was = i.checked ? "1" : ""; }); }
+
+function fillForm() {
+  const p = active();
+  PROFILE_KEYS.forEach(k => setRadio(k, state.profile[k] || ""));
+  FORM_KEYS.forEach(k => setRadio(k, p.form[k] || ""));
+  form.querySelectorAll('input[name="habits"]').forEach(i => i.checked = (p.form.habits || []).includes(i.value));
+  document.getElementById("pname").value = p.name;
+  document.getElementById("combo").value = p.form.combo || "";
+  document.getElementById("freetext").value = p.form.freetext || "";
+}
+function onFormChange(e) {
+  const p = active();
+  const n = e.target.name;
+  if (PROFILE_KEYS.includes(n)) { state.profile[n] = radioVal(n); Store.saveProfile(); }
+  else {
+    materialize(p);
+    FORM_KEYS.forEach(k => p.form[k] = radioVal(k));
+    p.form.habits = [...form.querySelectorAll('input[name="habits"]:checked')].map(i => i.value);
+    p.form.combo = document.getElementById("combo").value.trim();
+    p.form.freetext = document.getElementById("freetext").value.trim();
+    const nm = document.getElementById("pname").value.trim();
+    if (nm && nm !== p.name) { p.name = nm; renderPartners(); }
+    Store.savePartner(p);
+  }
+  renderAnalysis(); renderDiary(); renderPlan(); renderTimerIdle();
+}
+form.addEventListener("change", onFormChange);
+["combo", "freetext", "pname"].forEach(id => document.getElementById(id).addEventListener("input", onFormChange));
+
+// ================= Partner-Leiste & Tabs =================
+function renderPartners() {
+  const row = document.getElementById("partner-row"); row.innerHTML = "";
+  state.partners.forEach(p => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "pchip"; b.setAttribute("aria-pressed", String(p.id === active().id));
+    b.innerHTML = `<span class="pdot"></span>`; b.append(document.createTextNode(p.name || "Ohne Namen"));
+    b.addEventListener("click", () => switchPartner(p.id)); row.append(b);
+  });
+  const add = document.createElement("button"); add.type = "button"; add.className = "pchip add"; add.textContent = "+ Neuer Partner";
+  add.addEventListener("click", newPartner); row.append(add);
+}
+function switchPartner(id) {
+  if (id === active().id) return;
+  state.activeId = id; Store.saveProfile(); resetClaude();
+  delConfirm(false); renderAll(); fillForm();
+}
+function newPartner() {
+  const n = state.partners.filter(p => !p.example).length + 1;
+  const p = {id: uid6(), name: "Partner " + n, form: JSON.parse(JSON.stringify(EMPTY_FORM)), createdAt: Date.now()};
+  state.partners = state.partners.filter(x => !x.example);
+  state.partners.push(p); state.activeId = p.id; Store.savePartner(p); Store.saveProfile();
+  resetClaude(); setTab("analyse"); renderAll(); fillForm();
+  const nm = document.getElementById("pname"); nm.focus(); nm.select();
+}
+let delArmed = false;
+function delConfirm(on) {
+  delArmed = on; const b = document.getElementById("btn-del");
+  b.textContent = on ? "Wirklich löschen? Tagebuch geht mit" : "Partner löschen";
+}
+document.getElementById("btn-del").addEventListener("click", () => {
+  if (!delArmed) { delConfirm(true); return; }
+  const p = active(); delConfirm(false);
+  if (!p.example) {
+    state._deletedSessions = state.sessions.filter(s => s.partnerId === p.id).map(s => s.id);
+    state.sessions = state.sessions.filter(s => s.partnerId !== p.id);
+    Store.deletePartner(p.id);
+  }
+  state.partners = state.partners.filter(x => x.id !== p.id);
+  if (!state.partners.length) state.partners.push({id: uid6(), name: "Partner 1", form: JSON.parse(JSON.stringify(EMPTY_FORM)), createdAt: Date.now()}), Store.savePartner(state.partners[0]);
+  state.activeId = state.partners[0].id; Store.saveProfile(); resetClaude(); renderAll(); fillForm();
+});
+document.getElementById("btn-clear").addEventListener("click", () => {
+  const p = active(); materialize(p); p.form = JSON.parse(JSON.stringify(EMPTY_FORM)); Store.savePartner(p); fillForm(); renderAll();
 });
 
-function readForm() {
-  const d = {};
-  for (const k of Object.keys(OPTIONS)) {
-    if (k === "habits") d.habits = [...form.querySelectorAll('input[name="habits"]:checked')].map(i => i.value);
-    else d[k] = (form.querySelector(`input[name="${k}"]:checked`) || {}).value || "";
-  }
-  d.freetext = document.getElementById("freetext").value.trim();
-  return d;
+function setTab(t) {
+  state.tab = t; Store.saveLocal();
+  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
+  ["analyse", "tagebuch", "plan", "timer"].forEach(x => document.getElementById("p-" + x).hidden = x !== t);
+  document.getElementById("claude-box").hidden = !(turns.length && (t === "analyse" || t === "plan"));
 }
-function fillForm(d) {
-  form.querySelectorAll("input").forEach(i => {
-    i.checked = i.name === "habits" ? (d.habits || []).includes(i.value) : d[i.name] === i.value;
-    i.dataset.was = i.checked ? "1" : "";
-  });
-  document.getElementById("freetext").value = d.freetext || "";
-}
-const KEY = "sparring-analyse-v1";
-function save() { try { localStorage.setItem(KEY, JSON.stringify(readForm())); } catch (e) {} }
-function load() { try { const s = localStorage.getItem(KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
-form.addEventListener("change", save);
-document.getElementById("freetext").addEventListener("input", save);
+document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
 
-// ---------- Regel-Analyse ----------
-const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// ================= Analyse =================
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const label = (k, v) => (OPTIONS[k].find(o => o[0] === v) || [, ""])[1];
 
 function classify(d) {
   const s = {druck:0, distanz:0, konter:0, power:0, volumen:0, clinch:0, wild:0};
-  if (d.movement === "vor") { s.druck += 3; }
-  if (d.movement === "viel") { s.distanz += 3; }
-  if (d.movement === "wartet") { s.konter += 3; }
+  if (d.movement === "vor") s.druck += 3;
+  if (d.movement === "viel") s.distanz += 3;
+  if (d.movement === "wartet") s.konter += 3;
   if (d.movement === "steht") { s.power += 1; s.konter += 1; }
-  if (d.distance === "lang") { s.distanz += 2; }
+  if (d.distance === "lang") s.distanz += 2;
   if (d.distance === "mittel") { s.power += 1; s.konter += 1; }
   if (d.distance === "eng") { s.druck += 2; s.clinch += 1; }
   if (d.output === "wenig") { s.power += 3; s.konter += 1; }
   if (d.output === "viel") { s.volumen += 3; s.druck += 1; }
-  if (d.output === "wild") { s.wild += 4; }
-  const h = new Set(d.habits);
+  if (d.output === "wild") s.wild += 4;
+  const h = new Set(d.habits || []);
   if (h.has("clinches")) s.clinch += 3;
   if (h.has("long_combos")) s.volumen += 2;
   if (h.has("singles")) { s.power += 1; s.konter += 1; }
-  if (h.has("telegraph")) s.power += 2;
+  if (h.has("telegraph") || h.has("overhand")) s.power += 2;
   if (h.has("guard_low")) s.konter += 1;
-  if (h.has("head_forward")) s.druck += 1;
+  if (h.has("head_forward") || h.has("body_worker")) s.druck += 1;
   if (h.has("straight_back")) s.distanz += 1;
+  if (d.hit === "konter") s.konter += 1;
+  if (d.hit === "clinch" || d.ropes === "clinch") s.clinch += 1;
   const ranked = Object.entries(s).sort((a, b) => b[1] - a[1]);
   if (ranked[0][1] === 0) return [];
   const top = ranked.filter(([, v]) => v > 0 && v >= ranked[0][1] - 1).slice(0, 2);
   if (top.length === 2 && top[0][1] <= 3 && ["distanz","power"].every(x => top.some(t => t[0] === x))) return [["allround", 1]];
   return top.map(([k, v]) => [k, v / ranked[0][1]]);
 }
+function side(w) { return w === "F" ? (state.profile.myStance === "s" ? "rechts" : "links") : (state.profile.myStance === "s" ? "links" : "rechts"); }
+function fillHands(txt) {
+  return txt.replace(/\{F\}-(\w+)/g, (_, w) => `Führhand-${w} (${side("F")})`)
+            .replace(/\{S\}-(\w+)/g, (_, w) => `Schlaghand-${w} (${side("S")})`)
+            .replace(/\{S\}/g, `Schlaghand (${side("S")})`)
+            .replace(/\{F\}/g, `Führhand (${side("F")})`);
+}
+function mixedStance(d) { const m = state.profile.myStance; return !!(m && d.pStance && d.pStance !== "w" && m !== d.pStance); }
 
-function hands(d) {
-  const south = d.myStance === "s";
-  return { F: south ? "rechten" : "linken", S: south ? "linken" : "rechten",
-           Fn: south ? "Rechte" : "Linke", Sn: south ? "Rechte" : "Linke" };
+function stats(pid) {
+  const st = {};
+  state.sessions.filter(s => s.partnerId === pid).forEach(s => Object.entries(s.results || {}).forEach(([k, v]) => {
+    st[k] = st[k] || {ok:0, mid:0, no:0}; if (st[k][v] !== undefined) st[k][v]++;
+  }));
+  return st;
 }
-function fillHands(txt, d) {
-  const h = hands(d);
-  // "{S}-Cross" -> "Schlaghand-Cross (rechts)" etc.
-  return txt.replace(/\{F\}-(\w+)/g, (_, w) => `Führhand-${w} (${h.F === "linken" ? "links" : "rechts"})`)
-            .replace(/\{S\}-(\w+)/g, (_, w) => `Schlaghand-${w} (${h.S === "linken" ? "links" : "rechts"})`)
-            .replace(/der \{S\}/g, `der Schlaghand (${h.S === "linken" ? "links" : "rechts"})`)
-            .replace(/\{S\}/g, `Schlaghand (${h.S === "linken" ? "links" : "rechts"})`)
-            .replace(/\{F\}/g, `Führhand (${h.F === "linken" ? "links" : "rechts"})`);
-}
-function mixedStance(d) {
-  if (!d.myStance || !d.pStance || d.pStance === "w") return false;
-  return d.myStance !== d.pStance;
+function verdict(t) {
+  if (!t) return null;
+  const n = t.ok + t.mid + t.no; if (!n) return null;
+  if (t.no >= 2 && t.no >= t.ok) return "no";
+  if (t.ok >= 2 && t.ok > t.no) return "ok";
+  return "mid";
 }
 
-function analyse(d) {
+function analyse(p) {
+  const d = p.form;
   const styles = classify(d);
   const mixed = mixedStance(d);
-  let habits = HABITS.filter(h => d.habits.includes(h.id));
-  const beginner = d.level === "a";
-  const limited = beginner && habits.length > 3;
-  if (beginner) habits = habits.slice(0, 3);
-
-  const counters = habits.map(h => ({
-    label: h.label,
-    counter: fillHands(typeof h.counter === "string" ? h.counter : (mixed ? h.counter.mixed : h.counter.same), d),
-    why: h.why, warn: h.warn, drill: h.drill
-  }));
+  const st = stats(p.id);
+  let items = HABITS.filter(h => (d.habits || []).includes(h.id)).map(h => ({id: h.id, label: h.label,
+    counter: typeof h.counter === "string" ? h.counter : (mixed ? h.counter.mixed : h.counter.same), alt: h.alt, why: h.why, warn: h.warn, drill: h.drill}));
+  ["hit", "ropes"].forEach(k => { if (d[k]) { const x = DETAIL[k][d[k]]; items.push(Object.assign({id: k + "-" + d[k]}, x)); } });
+  items.forEach((c, i) => {
+    c.tally = st[c.id]; c.verdict = verdict(c.tally); c.order = i;
+    c.swapped = c.verdict === "no";
+    c.show = fillHands(c.swapped ? c.alt : c.counter);
+    c.score = c.tally ? c.tally.ok - c.tally.no + c.tally.mid * .3 : 0;
+  });
+  const beginner = state.profile.level === "a";
+  const limited = beginner && items.length > 3;
+  if (beginner) items = items.slice(0, 3);
+  const best = items.slice().sort((a, b) => (b.swapped ? -9 : b.score) - (a.swapped ? -9 : a.score) || a.order - b.order);
 
   const strengths = [];
   styles.forEach(([k]) => STYLES[k].str.forEach(x => strengths.includes(x) || strengths.push(x)));
   if (d.size === "g") strengths.push("Mehr Reichweite als du");
+  if ((d.habits || []).includes("lead_hook")) strengths.push("Gefährlicher Führhand-Haken");
+  if (d.combo) strengths.push(`Lieblingskombi „${d.combo}“: Wenn sie kommt, eng decken und am Ende kontern.`);
 
   const plan = [];
-  const st = styles[0] ? STYLES[styles[0][0]] : null;
-  if (st) plan.push(...st.plan.slice(0, 2));
-  if (mixed) plan.push(d.myStance === "o" ? "Andere Auslage: Führfuß außen gewinnen, nach links bewegen (weg von seiner linken Schlaghand), deine Rechte ist die Hauptwaffe." : "Andere Auslage: Führfuß außen gewinnen, nach rechts bewegen (weg von seiner rechten Schlaghand), deine Linke ist die Hauptwaffe.");
+  const top = styles[0] ? STYLES[styles[0][0]] : null;
+  if (top) plan.push(...top.plan.slice(0, 2));
+  if (mixed) plan.push(state.profile.myStance === "o" ? "Andere Auslage: Führfuß außen gewinnen, nach links bewegen (weg von seiner linken Schlaghand). Deine Rechte ist die Hauptwaffe." : "Andere Auslage: Führfuß außen gewinnen, nach rechts bewegen (weg von seiner rechten Schlaghand). Deine Linke ist die Hauptwaffe.");
   if (d.pStance === "w") plan.push("Er wechselt die Auslage: Achte darauf, wann. In dem Moment steht er unsauber.");
   if (d.size === "g") plan.push("Er ist größer: Distanz mit Kopfbewegung schließen, nicht gerade rein. Drinnen am Körper arbeiten.");
   if (d.size === "k") plan.push("Er ist kleiner: Jab als Zaun, Uppercut wenn er reinduckt, nicht in die Ecke drücken lassen.");
-  if (counters[0]) plan.push(`Konter-Falle: Warte auf „${counters[0].label.toLowerCase()}“ und antworte mit dem Konter aus der Tabelle.`);
-  if (d.habits.includes("tired")) plan.push("Tempo: Ab Runde 3 Druck machen, da lässt er nach.");
-  const planOut = plan.slice(0, 5);
+  if (best[0]) plan.push(`Konter-Falle: Warte auf „${best[0].label.charAt(0).toLowerCase() + best[0].label.slice(1)}“ und antworte mit: ${best[0].show}`);
+  if ((d.habits || []).includes("tired")) plan.push("Tempo: Ab Runde 3 Druck machen, da lässt er nach.");
 
-  const drillKeys = [];
-  const add = k => { if (k && !drillKeys.includes(k)) drillKeys.push(k); };
-  counters.forEach(c => add(c.drill));
+  const drills = [];
+  const add = k => { if (k && !drills.includes(k)) drills.push(k); };
+  best.forEach(c => add(c.drill));
   if (mixed) add("southpaw");
   styles.forEach(([k]) => STYLES[k].drills.forEach(add));
-  return { styles, strengths, counters, plan: planOut, drills: drillKeys.slice(0, 4), mixed, limited, beginner };
+  return {styles, strengths, items, best, plan: plan.slice(0, 5), drills: drills.slice(0, 4), mixed, limited, cond: top ? top.cond : "Intervalle", diaryCount: state.sessions.filter(s => s.partnerId === p.id).length};
 }
 
-function render(d) {
-  const a = analyse(d);
+function pillFor(v, t) {
+  if (!v) return `<span class="pill none">Noch nicht getestet</span>`;
+  const txt = {ok: "Sitzt", mid: "Teilweise", no: "Klappt nicht"}[v];
+  return `<span class="pill ${v}">${txt}</span><span class="tally">${t.ok}× ✓ · ${t.mid}× ~ · ${t.no}× ✗</span>`;
+}
+
+function renderAnalysis() {
+  const p = active(); const d = p.form; const a = analyse(p);
   const box = document.getElementById("result");
   const missing = [];
   if (!d.pStance) missing.push("seine Auslage");
   if (!d.movement) missing.push("wie er sich bewegt");
   if (!d.output) missing.push("wie er schlägt");
-  if (!d.habits.length) missing.push("seine Gewohnheiten");
+  if (!(d.habits || []).length) missing.push("seine Gewohnheiten");
 
-  if (!a.styles.length && !a.counters.length) {
-    box.innerHTML = `<h2>Noch keine Analyse</h2><p class="hint" style="margin:0">Wähl oben aus, wie er sich bewegt, wie er schlägt und was er immer wieder macht. Dann auf „Analyse starten“ drücken.</p>`;
+  if (!a.styles.length && !a.items.length) {
+    box.innerHTML = `<h2>Noch keine Analyse</h2><p class="hint">Wähl oben aus, wie ${esc(p.name)} sich bewegt, wie er schlägt und was er immer wieder macht. Die Analyse erscheint dann sofort hier.</p>`;
     return;
   }
-
   const styleHtml = a.styles.length
-    ? a.styles.map(([k, w], i) => `<span class="style-badge">${STYLES[k].name}${a.styles.length > 1 ? `<small>${i === 0 ? "vor allem" : "mit Zügen"}</small>` : ""}</span>`).join("")
+    ? a.styles.map(([k], i) => `<span class="style-badge">${STYLES[k].name}${a.styles.length > 1 ? `<small>${i === 0 ? "vor allem" : "mit Zügen"}</small>` : ""}</span>`).join("")
     : `<span class="style-badge">Stil noch unklar</span>`;
-  const descHtml = a.styles.map(([k]) => `<p style="margin:0">${STYLES[k].desc}</p>`).join("");
-
-  const rows = a.counters.map(c => `<tr><td>${esc(c.label)}</td><td class="counter">${esc(c.counter)}<span class="warn">Achtung: ${esc(c.warn)}</span></td><td>${esc(c.why)}</td></tr>`).join("");
+  const hasDiary = a.diaryCount > 0;
+  const rows = a.items.map(c => `<tr><td>${esc(c.label)}</td><td class="counter">${c.swapped ? `<span class="swap">Klappt bisher nicht. Probier stattdessen:</span>` : ""}${esc(c.show)}<span class="warn">Achtung: ${esc(c.warn)}</span></td><td>${esc(c.why)}</td>${hasDiary ? `<td>${pillFor(c.verdict, c.tally)}</td>` : ""}</tr>`).join("");
 
   box.innerHTML = `
-    <div class="result-head"><h2>Deine Rundenkarte</h2><span class="label">Sofort-Analyse</span></div>
-    <div style="display:grid;gap:10px"><span class="label">Stil-Einschätzung</span><div class="styles">${styleHtml}</div>${descHtml}</div>
+    <div class="result-head"><h2>Rundenkarte gegen ${esc(p.name)}</h2><span class="label">${hasDiary ? `Angepasst nach ${a.diaryCount} Sparring${a.diaryCount > 1 ? "s" : ""}` : "Sofort-Analyse"}</span></div>
+    <div style="display:grid;gap:10px"><span class="label">Stil-Einschätzung</span><div class="styles">${styleHtml}</div>${a.styles.map(([k]) => `<p>${STYLES[k].desc}</p>`).join("")}</div>
     <div class="two">
       <div class="box"><h3>Seine Stärken · hier aufpassen</h3><ul class="clean">${a.strengths.map(s => `<li>${esc(s)}</li>`).join("") || "<li>Noch zu wenig Infos</li>"}</ul></div>
-      <div class="box"><h3>Gameplan fürs nächste Sparring</h3><ol class="plan">${a.plan.map(p => `<li><span>${esc(p)}</span></li>`).join("")}</ol></div>
+      <div class="box"><h3>Gameplan fürs nächste Sparring</h3><ol class="plan">${a.plan.map(x => `<li><span>${esc(x)}</span></li>`).join("")}</ol></div>
     </div>
-    ${a.counters.length ? `<div style="display:grid;gap:10px"><h3>Seine Gewohnheiten · deine Konter</h3>
-      <div class="table-wrap"><table><thead><tr><th style="width:26%">Er macht …</th><th>Dein Konter</th><th style="width:28%">Warum es klappt</th></tr></thead><tbody>${rows}</tbody></table></div>
-      ${a.limited ? `<p class="note">Als Anfänger lieber auf drei Konter konzentrieren. Die restlichen Gewohnheiten kommen dran, wenn die sitzen.</p>` : ""}</div>`
+    ${a.items.length ? `<div style="display:grid;gap:10px"><h3>Seine Gewohnheiten · deine Konter</h3>
+      <div class="table-wrap"><table><thead><tr><th style="width:24%">Er macht …</th><th>Dein Konter</th><th style="width:24%">Warum es klappt</th>${hasDiary ? `<th style="width:16%">Bilanz</th>` : ""}</tr></thead><tbody>${rows}</tbody></table></div>
+      ${a.limited ? `<p class="note">Als Anfänger lieber auf drei Konter konzentrieren. Die restlichen Gewohnheiten kommen dran, wenn die sitzen.</p>` : ""}
+      ${!hasDiary ? `<p class="note">Trag nach dem Sparring im Tagebuch ein, welche Konter geklappt haben. Dann zeigt die Tabelle eine Bilanz, und Konter, die nicht funktionieren, werden ersetzt.</p>` : ""}</div>`
       : `<p class="note">Wähl seine Gewohnheiten aus, dann bekommst du für jede einen eigenen Konter.</p>`}
     <div style="display:grid;gap:10px"><h3>Drills dafür</h3><div class="drills">${a.drills.map(k => `<div class="drill"><h3>${DRILLS[k].name}</h3><div class="meta">${DRILLS[k].meta}</div><div>${DRILLS[k].text}</div></div>`).join("")}</div></div>
     ${missing.length ? `<p class="note">Noch genauer wird es, wenn du angibst: ${missing.join(", ")}.</p>` : ""}
   `;
 }
 
-form.addEventListener("submit", e => { e.preventDefault(); render(readForm()); save(); document.getElementById("result").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start"}); });
-document.getElementById("btn-reset").addEventListener("click", () => { fillForm({habits: []}); save(); render(readForm()); });
+// ================= Tagebuch =================
+const roundsBox = document.getElementById("d-rounds");
+buildChips(roundsBox, "rounds", [["2","2"],["3","3"],["4","4"],["5","5"],["6","6"],["8","8"]], false, "d");
+document.getElementById("d-date").value = today();
+setTimeout(() => { const r = document.getElementById("d-rounds-4"); if (r) { r.checked = true; r.dataset.was = "1"; } });
+const RATE = [["ok","✓ Klappt"],["mid","~ Teils"],["no","✗ Nein"],["none","– Nicht probiert"]];
 
-// ---------- Claude ----------
+function renderDiary() {
+  const p = active(); const a = analyse(p);
+  document.getElementById("diary-partner").textContent = "gegen " + p.name;
+  const rates = document.getElementById("d-rates");
+  const prev = {}; rates.querySelectorAll("input:checked").forEach(i => prev[i.name] = i.value);
+  rates.innerHTML = a.items.length ? "" : `<p class="hint">Noch keine Konter. Wähl in der Analyse zuerst seine Gewohnheiten aus.</p>`;
+  a.items.forEach(c => {
+    const row = document.createElement("div"); row.className = "rate-row";
+    const txt = document.createElement("div");
+    txt.innerHTML = `<div style="font-weight:600">${esc(c.label)}</div><div class="hint">${esc(c.show)}</div>`;
+    const seg = document.createElement("div"); seg.className = "seg"; seg.setAttribute("role", "radiogroup"); seg.setAttribute("aria-label", c.label);
+    RATE.forEach(([v, l]) => {
+      const lab = document.createElement("label"); const inp = document.createElement("input"); inp.type = "radio"; inp.name = "rate-" + c.id; inp.value = v; inp.id = "rate-" + c.id + "-" + v;
+      inp.checked = (prev[inp.name] || "none") === v;
+      const sp = document.createElement("span"); sp.className = v; sp.textContent = l; lab.append(inp, sp); seg.append(lab);
+    });
+    row.append(txt, seg); rates.append(row);
+  });
+
+  // Bilanz
+  const bil = document.getElementById("bilanz");
+  const n = a.diaryCount;
+  if (!n) bil.innerHTML = `<h2>Bilanz</h2><p class="hint">Noch keine Einträge gegen ${esc(p.name)}. Nach dem nächsten Sparring hier eintragen, was geklappt hat. Ab zwei Einträgen pro Konter siehst du, was sitzt und was ersetzt wird.</p>`;
+  else bil.innerHTML = `<h2>Bilanz nach ${n} Sparring${n > 1 ? "s" : ""}</h2><div class="bilanz">${a.items.map(c => {
+    const t = c.tally || {ok:0, mid:0, no:0}; const tot = t.ok + t.mid + t.no;
+    return `<div class="bilanz-row"><div class="top"><span>${esc(c.label)}</span>${pillFor(c.verdict, t).replace('<span class="tally">', '<span class="tally" style="display:none">')}</div>
+      <div class="bar" role="img" aria-label="${t.ok} mal geklappt, ${t.mid} mal teilweise, ${t.no} mal nicht">${tot ? `<i class="b-ok" style="width:${t.ok / tot * 100}%"></i><i class="b-mid" style="width:${t.mid / tot * 100}%"></i><i class="b-no" style="width:${t.no / tot * 100}%"></i>` : ""}</div>
+      <span class="tally">${t.ok}× ✓ · ${t.mid}× ~ · ${t.no}× ✗</span></div>`; }).join("")}</div>`;
+
+  // Einträge
+  const list = state.sessions.filter(s => s.partnerId === p.id).sort((x, y) => (y.date || "").localeCompare(x.date || "") || (y.createdAt || 0) - (x.createdAt || 0));
+  const ent = document.getElementById("entries");
+  const labels = {}; HABITS.forEach(h => labels[h.id] = h.label);
+  ["hit", "ropes"].forEach(k => Object.entries(DETAIL[k]).forEach(([v, x]) => labels[k + "-" + v] = x.label));
+  ent.innerHTML = `<h2>Einträge</h2>` + (list.length ? `<div class="entries">${list.map(s => `
+    <div class="entry"><div class="entry-head"><h3>${esc(fmtDate(s.date))} · ${esc(s.rounds || "?")} Runden</h3><button type="button" class="btn-ghost" data-del="${esc(s.id)}">Löschen</button></div>
+    <div class="entry-res">${Object.entries(s.results || {}).map(([k, v]) => `<span class="pill ${v}">${{ok:"✓",mid:"~",no:"✗"}[v]} ${esc(labels[k] || k)}</span>`).join("")}</div>
+    ${s.notes ? `<p>${esc(s.notes)}</p>` : ""}</div>`).join("")}</div>` : `<p class="hint">Noch keine Einträge.</p>`);
+  ent.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => {
+    if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Wirklich löschen?"; b.className = "btn-danger"; return; }
+    state.sessions = state.sessions.filter(s => s.id !== b.dataset.del); Store.deleteSession(b.dataset.del); renderAll();
+  }));
+}
+function fmtDate(s) { if (!s) return ""; const [y, m, d] = s.split("-"); return `${d}.${m}.${y}`; }
+document.getElementById("d-save").addEventListener("click", () => {
+  const p = active(); materialize(p); Store.savePartner(p);
+  const results = {};
+  document.querySelectorAll("#d-rates input:checked").forEach(i => { if (i.value !== "none") results[i.name.slice(5)] = i.value; });
+  const notes = document.getElementById("d-notes").value.trim();
+  const msg = document.getElementById("d-msg");
+  if (!Object.keys(results).length && !notes) { msg.textContent = "Bewerte mindestens einen Konter oder schreib eine Notiz."; return; }
+  const s = {id: uid6(), partnerId: p.id, date: document.getElementById("d-date").value || today(), rounds: (document.querySelector('input[name="d-rounds"]:checked') || {}).value || "", results, notes, createdAt: Date.now()};
+  state.sessions.push(s); Store.saveSession(s);
+  document.getElementById("d-notes").value = "";
+  document.querySelectorAll('#d-rates input[value="none"]').forEach(i => i.checked = true);
+  msg.textContent = "Gespeichert. Die Analyse ist angepasst.";
+  setTimeout(() => msg.textContent = "", 4000);
+  renderAll();
+});
+
+// ================= Trainingsplan =================
+const CFG = {days: [["2","2"],["3","3"],["4","4"],["5","5"],["6","6"]], minutes: [["60","60 Min"],["90","90 Min"],["120","120 Min"]],
+  equip: [["partner","Partner"],["pratzen","Trainer mit Pratzen"],["sandsack","Sandsack"]], spar: [["ja","Ja"],["nein","Nein"]]};
+document.querySelectorAll("[data-cfg]").forEach(box => buildChips(box, box.dataset.cfg, CFG[box.dataset.cfg], !!box.dataset.multi, "cfg"));
+function fillCfg() {
+  const c = state.profile.plan;
+  Object.keys(CFG).forEach(k => document.querySelectorAll(`input[name="cfg-${k}"]`).forEach(i => { i.checked = Array.isArray(c[k]) ? c[k].includes(i.value) : c[k] === i.value; i.dataset.was = i.checked ? "1" : ""; }));
+}
+document.getElementById("plan-cfg").addEventListener("change", () => {
+  const c = state.profile.plan;
+  ["days", "minutes", "spar"].forEach(k => c[k] = (document.querySelector(`input[name="cfg-${k}"]:checked`) || {}).value || c[k]);
+  c.equip = [...document.querySelectorAll('input[name="cfg-equip"]:checked')].map(i => i.value);
+  Store.saveProfile(); renderPlan();
+});
+const WEEK = {2:["Dienstag","Freitag"],3:["Montag","Mittwoch","Freitag"],4:["Montag","Dienstag","Donnerstag","Freitag"],5:["Montag","Dienstag","Mittwoch","Freitag","Samstag"],6:["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"]};
+
+function drillFor(k, equip) {
+  const d = DRILLS[k]; const ok = d.equip.some(e => e === "schatten" || equip.includes(e));
+  return ok ? {name: d.name, text: d.text} : {name: d.name + " (allein)", text: d.solo};
+}
+function buildPlan() {
+  const p = active(); const a = analyse(p); const c = state.profile.plan;
+  const n = +c.days || 3, M = +c.minutes || 90, equip = c.equip || [];
+  const partner = equip.includes("partner");
+  const spar = c.spar === "ja" && partner;
+  const warm = M >= 90 ? 15 : 10, cool = M >= 90 ? 10 : 5, core = M - warm - cool;
+  const tech = Math.round(core * .4 / 5) * 5, appl = Math.round(core * .35 / 5) * 5, cond = core - tech - appl;
+  const focus = a.best.filter(x => !x.swapped).slice(0, 3);
+  const focusAll = focus.length ? focus : a.best.slice(0, 3);
+  const drillKeys = a.drills.length ? a.drills : ["blockreturn", "finten"];
+  const beginner = state.profile.level === "a";
+  const days = WEEK[n] || WEEK[3];
+  const rows = days.map((day, i) => {
+    const last = i === n - 1, beforeSpar = spar && i === n - 2;
+    if (spar && last) return {day, title: "Sparring", min: M, items: [
+      [warm, "Aufwärmen: Seilspringen, Mobilisation, Schattenboxen mit dem Gameplan"],
+      [null, `${beginner ? "2–3" : "4–6"} Runden technisches Sparring gegen ${p.name}. Rundentimer in der App nutzen, in den Pausen die Gameplan-Punkte lesen.`],
+      [null, "Direkt danach: Tagebuch-Eintrag. Welche Konter haben geklappt?"],
+      [cool, "Cool-down und Dehnen"]]};
+    const dk = drillKeys[i % drillKeys.length]; const dr = drillFor(dk, equip);
+    const fc = focusAll[i % Math.max(focusAll.length, 1)];
+    const title = beforeSpar ? "Leicht: Technik scharf halten" : (fc ? "Konter: " + fc.label : dr.name);
+    const items = [[warm, "Aufwärmen: Seilspringen, Mobilisation, Schattenboxen locker"]];
+    items.push([tech, `Technik · ${dr.name}: ${dr.text}`]);
+    if (beforeSpar) {
+      items.push([appl, "Schattenboxen mit dem kompletten Gameplan, Runde für Runde ein Punkt. Locker, nur Technik."]);
+    } else {
+      const applText = fc
+        ? (partner ? `Bedingtes Sparring: Partner spielt ${p.name} und macht immer wieder „${fc.label.charAt(0).toLowerCase() + fc.label.slice(1)}“. Du antwortest jedes Mal mit: ${fc.show}`
+                   : equip.includes("pratzen") ? `Pratzen: Trainer zeigt „${fc.label.charAt(0).toLowerCase() + fc.label.slice(1)}“ an, du antwortest mit: ${fc.show}`
+                   : equip.includes("sandsack") ? `Sandsack: Stell dir „${fc.label.charAt(0).toLowerCase() + fc.label.slice(1)}“ vor und schlag den Konter. Runde für Runde, saubere Technik.`
+                   : `Schattenboxen: Stell dir „${fc.label.charAt(0).toLowerCase() + fc.label.slice(1)}“ vor und schlag den Konter, 4 × 3 Min.`)
+        : "Sandsack oder Schatten: Kombis aus dem Gameplan, 4 × 3 Min.";
+      items.push([appl, "Anwendung · " + applText]);
+      const condText = COND[a.cond] || COND.Intervalle;
+      items.push([cond, "Kondition · " + (equip.includes("sandsack") || !condText.startsWith("Sandsack") ? condText : "Seilspringen und Schatten-Intervalle: 30 s Vollgas, 30 s locker.")]);
+    }
+    items.push([cool, "Cool-down und Dehnen"]);
+    if (beforeSpar) { const t = items.reduce((s, x) => s + (x[0] || 0), 0); return {day, title, min: Math.min(t, 60), items: items.map(x => [x[0] ? Math.round(x[0] * Math.min(1, 60 / t)) : x[0], x[1]])}; }
+    return {day, title, min: M, items};
+  });
+  const home = drillKeys.slice(0, 3).map(k => `${DRILLS[k].name}: ${DRILLS[k].solo}`);
+  return {p, a, rows, focus: focusAll, home, spar, partner, beginner};
+}
+function planText(pl) {
+  return pl.rows.map(r => `${r.day} – ${r.title} (${r.min} Min)\n` + r.items.map(([m, t]) => `  - ${m ? m + " Min: " : ""}${t}`).join("\n")).join("\n");
+}
+function renderPlan() {
+  fillCfg();
+  const pl = buildPlan(); const out = document.getElementById("plan-out");
+  if (!pl.a.items.length && !pl.a.styles.length) { out.innerHTML = `<h2>Noch kein Plan</h2><p class="hint">Beschreib zuerst in der Analyse, wie ${esc(pl.p.name)} boxt. Dann entsteht hier dein Wochenplan.</p>`; return; }
+  out.innerHTML = `
+    <div class="result-head"><h2>Wochenplan gegen ${esc(pl.p.name)}</h2>${sample ? `<button type="button" class="btn-claude" id="plan-claude">Mit Claude verfeinern</button>` : ""}</div>
+    <div class="box"><h3>Fokus diese Woche</h3><ol class="plan">${pl.focus.map(f => `<li><span><strong>${esc(f.label)}</strong>: ${esc(f.show)}</span></li>`).join("") || "<li><span>Gameplan aus der Analyse</span></li>"}</ol></div>
+    <div class="table-wrap"><table class="plan-table"><thead><tr><th style="width:120px">Tag</th><th>Inhalt</th><th style="width:80px">Dauer</th></tr></thead><tbody>
+      ${pl.rows.map(r => `<tr><td>${r.day}</td><td><div style="font-weight:700;margin-bottom:6px">${esc(r.title)}</div><ul>${r.items.map(([m, t]) => `<li>${m ? `<span class="min">${m} Min</span> · ` : ""}${esc(t)}</li>`).join("")}</ul></td><td class="min">${r.min} Min</td></tr>`).join("")}
+    </tbody></table></div>
+    <div class="box"><h3>Für zu Hause</h3><ul class="clean">${pl.home.map(h => `<li>${esc(h)}</li>`).join("")}</ul></div>
+    ${!pl.partner ? `<p class="note">Ohne Partner üben die Drills den Konter allein. Für das echte Timing brauchst du irgendwann jemanden, der den Fehler vormacht.</p>` : ""}
+    <p class="note">Hartes Sparring höchstens 1–2 Mal pro Woche. Der Tag vor dem Sparring ist bewusst leicht.${pl.beginner ? " Als Anfänger: nur technisches Sparring, maximal 3 Runden." : ""}</p>`;
+  const b = document.getElementById("plan-claude");
+  if (b) b.addEventListener("click", () => {
+    resetClaude();
+    ask(INSTRUCTIONS + "\n\n" + describe(active()) + "\n\nDie App hat diesen Wochenplan erstellt:\n" + planText(pl) +
+      "\n\nAufgabe jetzt: Verbessere diesen Wochenplan für genau diesen Gegner. Antworte im Format: ## Fokus diese Woche, ## Wochenplan (Tabelle Tag | Schwerpunkt | Inhalt | Dauer), ## Für zu Hause, ## Check nach dem Sparring. Keine Stil-Analyse wiederholen.", null, "plan");
+  });
+}
+
+// ================= Rundentimer =================
+const TCFG = {rounds: [["3","3"],["4","4"],["6","6"],["8","8"],["12","12"]], len: [["1","1 Min"],["2","2 Min"],["3","3 Min"]], rest: [["30","30 s"],["60","60 s"]], sound: [["an","An"],["aus","Aus"]]};
+document.querySelectorAll("[data-tcfg]").forEach(box => buildChips(box, box.dataset.tcfg, TCFG[box.dataset.tcfg], false, "tcfg"));
+function fillTcfg() { const t = state.profile.timer; Object.keys(TCFG).forEach(k => document.querySelectorAll(`input[name="tcfg-${k}"]`).forEach(i => { i.checked = t[k] === i.value; i.dataset.was = i.checked ? "1" : ""; })); }
+document.querySelectorAll("[data-tcfg]").forEach(box => box.addEventListener("change", () => {
+  const t = state.profile.timer; Object.keys(TCFG).forEach(k => t[k] = (document.querySelector(`input[name="tcfg-${k}"]:checked`) || {}).value || t[k]);
+  fillTcfg(); Store.saveProfile(); if (!T.running && !T.started) timerReset();
+}));
+const T = {running: false, started: false, phases: [], idx: 0, end: 0, left: 0, iv: null, ctx: null, wake: null, warned: false};
+const fmt = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+function buildPhases() {
+  const t = state.profile.timer; const R = +t.rounds, L = +t.len * 60, P = +t.rest; const ph = [{type: "prep", dur: 10}];
+  for (let r = 1; r <= R; r++) { ph.push({type: "round", n: r, dur: L}); if (r < R) ph.push({type: "rest", n: r, dur: P}); }
+  ph.push({type: "done", dur: 0}); return ph;
+}
+function cues() { const a = analyse(active()); return a.plan.length ? a.plan : ["Hände oben, Kinn runter.", "Jab als erster Schlag.", "Nach jeder Kombi raus oder Winkel."]; }
+function beep(times = 1, freq = 880, dur = .18) {
+  if (state.profile.timer.sound !== "an" || !T.ctx) return;
+  for (let i = 0; i < times; i++) {
+    const o = T.ctx.createOscillator(), g = T.ctx.createGain(); const t0 = T.ctx.currentTime + i * (dur + .12);
+    o.frequency.value = freq; o.type = "square"; g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(.25, t0 + .01); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    o.connect(g).connect(T.ctx.destination); o.start(t0); o.stop(t0 + dur + .02);
+  }
+}
+function renderTimer() {
+  const ph = T.phases[T.idx]; const el = document.getElementById("timer"); const R = +state.profile.timer.rounds;
+  el.className = "timer" + (ph.type === "round" ? " round" : ph.type === "rest" ? " rest" : "");
+  document.getElementById("t-phase").textContent = {prep: "Gleich geht's los", round: "Runde " + ph.n, rest: "Pause", done: "Fertig"}[ph.type] + (T.started && !T.running && ph.type !== "done" ? " · pausiert" : "");
+  document.getElementById("t-clock").textContent = fmt(Math.ceil(T.left));
+  document.getElementById("t-info").textContent = ph.type === "done" ? `${R} Runden geschafft. Jetzt ins Tagebuch eintragen.` : (ph.n ? `Runde ${ph.n} von ${R}` : `${R} Runden gegen ${active().name}`);
+  const c = cues(); const cue = document.getElementById("t-cue");
+  if (ph.type === "rest" || ph.type === "prep") cue.innerHTML = `<ul class="cue-list">${c.slice(0, 3).map((x, i) => `<li><b>${i + 1}</b><span>${esc(x)}</span></li>`).join("")}</ul>`;
+  else if (ph.type === "round") cue.innerHTML = `<p class="cue">${esc(c[(ph.n - 1) % c.length])}</p>`;
+  else cue.innerHTML = "";
+  document.getElementById("t-start").textContent = T.running ? "Pause" : (T.started && ph.type !== "done" ? "Weiter" : "Start");
+}
+function tick() {
+  T.left = Math.max(0, (T.end - performance.now()) / 1000);
+  const ph = T.phases[T.idx];
+  if (ph.type === "round" && !T.warned && T.left <= 10 && ph.dur > 20) { T.warned = true; beep(3, 1200, .06); }
+  if (T.left <= 0) {
+    T.idx++; T.warned = false; const nx = T.phases[T.idx];
+    if (nx.type === "round") beep(3, 880, .2); else if (nx.type === "rest") beep(1, 600, .5); else if (nx.type === "done") beep(4, 600, .3);
+    if (nx.type === "done") { T.running = false; clearInterval(T.iv); T.left = 0; releaseWake(); }
+    else { T.end = performance.now() + nx.dur * 1000; T.left = nx.dur; }
+  }
+  renderTimer();
+}
+async function requestWake() { try { if (navigator.wakeLock) T.wake = await navigator.wakeLock.request("screen"); } catch (e) {} }
+function releaseWake() { try { T.wake && T.wake.release(); } catch (e) {} T.wake = null; }
+document.getElementById("t-start").addEventListener("click", () => {
+  if (!T.ctx) { try { T.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (T.ctx && T.ctx.state === "suspended") T.ctx.resume();
+  if (T.phases[T.idx].type === "done") timerReset();
+  if (T.running) { T.running = false; clearInterval(T.iv); releaseWake(); renderTimer(); return; }
+  T.running = true; T.started = true; T.end = performance.now() + T.left * 1000; T.iv = setInterval(tick, 200); requestWake(); renderTimer();
+});
+document.getElementById("t-reset").addEventListener("click", timerReset);
+function timerReset() { clearInterval(T.iv); T.running = false; T.started = false; T.phases = buildPhases(); T.idx = 0; T.left = T.phases[0].dur; T.warned = false; releaseWake(); renderTimer(); }
+function renderTimerIdle() { if (!T.started) timerReset(); else renderTimer(); }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && T.running) requestWake(); });
+
+// ================= Claude =================
 let sample = null, turns = [], ctl = null, busy = false;
 const thread = document.getElementById("claude-thread");
 const statusEl = document.getElementById("claude-status");
@@ -500,23 +1070,31 @@ function md(src) {
     if ((m = l.match(/^(#{1,4})\s+(.*)/))) { closeList(); const lv = m[1].length <= 2 ? 2 : 3; out += `<h${lv}>${inline(m[2])}</h${lv}>`; }
     else if ((m = l.match(/^[-*•]\s+(.*)/))) { if (list !== "ul") { closeList(); out += "<ul>"; list = "ul"; } out += `<li>${inline(m[1])}</li>`; }
     else if ((m = l.match(/^\d+[.)]\s+(.*)/))) { if (list !== "ol") { closeList(); out += "<ol>"; list = "ol"; } out += `<li>${inline(m[1])}</li>`; }
-    else if (!l) { closeList(); }
-    else if (/^-{3,}$/.test(l)) { closeList(); }
+    else if (!l || /^-{3,}$/.test(l)) { closeList(); }
     else { closeList(); out += `<p>${inline(l)}</p>`; }
   }
   closeList(); closeTable(); return out;
 }
 
-function describe(d) {
-  const L = (k) => label(k, d[k]) || "keine Angabe";
+function describe(p) {
+  const d = p.form; const pr = state.profile;
+  const L = (k, v) => label(k, v) || "keine Angabe";
+  const a = analyse(p);
+  const diary = state.sessions.filter(s => s.partnerId === p.id).sort((x, y) => (x.date || "").localeCompare(y.date || ""));
+  const diaryTxt = diary.length ? diary.map(s => `- ${fmtDate(s.date)}, ${s.rounds || "?"} Runden: ` +
+    Object.entries(s.results || {}).map(([k, v]) => `${(a.items.find(i => i.id === k) || {label: k}).label} = ${{ok:"klappt", mid:"teilweise", no:"klappt nicht"}[v]}`).join("; ") +
+    (s.notes ? ` | Notiz: ${s.notes}` : "")).join("\n") : "- noch keine Einträge";
   return [
     "BOXER (rote Ecke):",
-    `- Auslage: ${L("myStance")}`, `- Erfahrung: ${L("level")}`, `- Eigener Stil: ${L("myStyle")}`,
-    "SPARRINGSPARTNER (blaue Ecke):",
-    `- Auslage: ${L("pStance")}`, `- Größe/Reichweite im Vergleich: ${L("size")}`, `- Lieblingsdistanz: ${L("distance")}`,
-    `- Bewegung: ${L("movement")}`, `- Schläge: ${L("output")}`,
-    `- Gewohnheiten: ${d.habits.length ? d.habits.map(h => label("habits", h)).join("; ") : "keine ausgewählt"}`,
-    `- Freie Beschreibung: ${d.freetext || "keine"}`
+    `- Auslage: ${L("myStance", pr.myStance)}`, `- Erfahrung: ${L("level", pr.level)}`, `- Eigener Stil: ${L("myStyle", pr.myStyle)}`,
+    `SPARRINGSPARTNER (blaue Ecke): ${p.name}`,
+    `- Auslage: ${L("pStance", d.pStance)}`, `- Größe/Reichweite im Vergleich: ${L("size", d.size)}`, `- Lieblingsdistanz: ${L("distance", d.distance)}`,
+    `- Bewegung: ${L("movement", d.movement)}`, `- Schläge: ${L("output", d.output)}`,
+    `- Wenn er getroffen wird: ${L("hit", d.hit)}`, `- An den Seilen: ${L("ropes", d.ropes)}`,
+    `- Lieblingskombi: ${d.combo || "keine Angabe"}`,
+    `- Gewohnheiten: ${(d.habits || []).length ? d.habits.map(h => label("habits", h)).join("; ") : "keine ausgewählt"}`,
+    `- Freie Beschreibung: ${d.freetext || "keine"}`,
+    "SPARRING-TAGEBUCH gegen diesen Partner (was hat geklappt?):", diaryTxt
   ].join("\n");
 }
 
@@ -526,6 +1104,7 @@ Aufgabe: Stil einordnen (Druckboxer, Distanzboxer, Konterboxer, Puncher, Boxer-P
 
 Regeln:
 - Prüfe bei jedem Konter die Auslagen (gleiche Auslage vs. Orthodox gegen Southpaw ändert Hand und Seite). Nenne konkret links/rechts für DIESEN Boxer.
+- Nutze das Sparring-Tagebuch: Konter, die mehrfach nicht geklappt haben, ersetzen oder erklären, warum sie scheitern. Was klappt, ausbauen.
 - Anfänger: max. 3 einfache Konter, Grundlagen zuerst.
 - Lieber 4 Konter, die genau zu den beschriebenen Gewohnheiten passen, als viele allgemeine Tipps.
 - Sparring ist Training, kein Kampf. Wenn jemand den Partner "fertigmachen" will, kurz an abgesprochene Intensität erinnern. Bei Kopfverletzungen/Schwindel: Pause und Arzt.
@@ -548,26 +1127,27 @@ function addBubble(role, text) {
   else { div.className = "claude-out"; div.innerHTML = text ? md(text) : `<span class="status pulse">Claude denkt nach …</span>`; }
   thread.append(div); return div;
 }
-
 const ERR = {
-  not_granted: "Du hast Claude für diese Seite nicht erlaubt. Die Sofort-Analyse funktioniert trotzdem.",
+  not_granted: "Du hast Claude für diese Seite nicht erlaubt. Die Analyse in der App funktioniert trotzdem.",
   rate_limited: "Gerade zu viele Anfragen. Warte kurz und versuch es dann noch einmal.",
   cancelled: "Gestoppt.",
-  prompt_too_large: "Die Unterhaltung ist zu lang geworden. Lade die Seite neu und starte eine neue Analyse.",
+  prompt_too_large: "Die Unterhaltung ist zu lang geworden. Starte eine neue Analyse.",
   refused: "Claude wollte darauf nicht antworten. Formulier die Frage anders."
 };
-
-async function ask(userText, shown) {
+function resetClaude() { if (ctl) ctl.abort(); turns = []; thread.innerHTML = ""; document.getElementById("follow").hidden = true; document.getElementById("claude-box").hidden = true; statusEl.textContent = ""; }
+async function ask(userText, shown, from) {
   if (!sample || busy) return;
   busy = true; setBusy(true);
-  document.getElementById("claude-box").hidden = false;
+  const box = document.getElementById("claude-box"); box.hidden = false;
+  document.querySelector("#claude-box h2").textContent = from === "plan" ? "Wochenplan von Claude" : (turns.length ? document.querySelector("#claude-box h2").textContent : "Analyse von Claude");
   if (shown) addBubble("user", shown);
   const out = addBubble("assistant", "");
   turns.push({role: "user", content: userText});
   ctl = new AbortController();
   statusEl.textContent = "läuft";
+  if (!shown) box.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start"});
   try {
-    const res = await sample(turns.slice(), { signal: ctl.signal, cache: false, onText: ({text}) => { out.innerHTML = md(text); } });
+    const res = await sample(turns.slice(), {signal: ctl.signal, cache: false, onText: ({text}) => { out.innerHTML = md(text); }});
     out.innerHTML = md(res.text);
     turns.push({role: "assistant", content: res.text});
     statusEl.textContent = res.truncated ? "Antwort wurde abgeschnitten" : "";
@@ -575,26 +1155,20 @@ async function ask(userText, shown) {
   } catch (e) {
     turns.pop();
     const msg = ERR[e && e.code] || "Das hat nicht geklappt. Versuch es gleich noch einmal.";
-    if (e && e.text) { out.innerHTML = md(e.text) + `<p class="hint">${esc(msg)}</p>`; }
-    else out.innerHTML = `<p class="hint">${esc(msg)}</p>`;
+    out.innerHTML = (e && e.text ? md(e.text) : "") + `<p class="hint">${esc(msg)}</p>`;
     statusEl.textContent = "";
-    if (e && (e.code === "not_granted" || e.code === "sampling_disabled" || e.code === "capability_disabled")) {
-      document.getElementById("btn-claude").hidden = true; document.getElementById("follow").hidden = true;
+    if (e && ["not_granted", "sampling_disabled", "capability_disabled", "capability_removed"].includes(e.code)) {
+      sample = null; document.getElementById("btn-claude").hidden = true; document.getElementById("follow").hidden = true; renderPlan();
     } else if (turns.length) document.getElementById("follow").hidden = false;
   } finally { busy = false; setBusy(false); ctl = null; }
 }
 function setBusy(b) {
-  ["btn-claude","btn-follow"].forEach(id => document.getElementById(id).disabled = b);
+  ["btn-claude", "btn-follow"].forEach(id => document.getElementById(id).disabled = b);
   document.querySelectorAll("[data-q]").forEach(x => x.disabled = b);
+  const pc = document.getElementById("plan-claude"); if (pc) pc.disabled = b;
   document.getElementById("btn-stop").hidden = !b;
 }
-
-document.getElementById("btn-claude").addEventListener("click", () => {
-  const d = readForm(); render(d);
-  turns = []; thread.innerHTML = ""; document.getElementById("follow").hidden = true;
-  ask(INSTRUCTIONS + "\n\n" + describe(d));
-  document.getElementById("claude-box").scrollIntoView({behavior: "smooth", block: "start"});
-});
+document.getElementById("btn-claude").addEventListener("click", () => { resetClaude(); ask(INSTRUCTIONS + "\n\n" + describe(active())); });
 document.getElementById("btn-follow").addEventListener("click", () => {
   const t = document.getElementById("followtext"); const v = t.value.trim(); if (!v) { t.focus(); return; }
   t.value = ""; ask(v, v);
@@ -602,14 +1176,43 @@ document.getElementById("btn-follow").addEventListener("click", () => {
 document.querySelectorAll("[data-q]").forEach(b => b.addEventListener("click", () => ask(b.dataset.q, b.textContent)));
 document.getElementById("btn-stop").addEventListener("click", () => ctl && ctl.abort());
 
-// ---------- Start ----------
-fillForm(load() || EXAMPLE);
-render(readForm());
+// ================= Start =================
+function renderAll() { renderPartners(); renderAnalysis(); renderDiary(); renderPlan(); renderTimerIdle(); }
+function applyLoaded(s) {
+  if (s.profile) state.profile = Object.assign({}, state.profile, s.profile, {plan: Object.assign({}, state.profile.plan, s.profile.plan || {}), timer: Object.assign({}, state.profile.timer, s.profile.timer || {})});
+  state.partners = (s.partners || []).filter(p => p && p.id).map(p => Object.assign({}, p, {form: Object.assign({}, EMPTY_FORM, p.form || {})}));
+  state.sessions = s.sessions || [];
+  state.activeId = s.activeId;
+  if (!state.partners.length) state.partners = [examplePartner()];
+  if (!state.partners.some(p => p.id === state.activeId)) state.activeId = state.partners[0].id;
+}
+(function boot() {
+  const local = Store.loadLocal();
+  applyLoaded(local || {});
+  if (local && local.tab) state.tab = local.tab;
+  setTab(state.tab); renderAll(); fillForm(); setSync("Wird geladen …");
+})();
 (async () => {
+  try { if (window.claude && window.claude.use) { sample = await window.claude.use("sample"); if (sample) { document.getElementById("btn-claude").hidden = false; renderPlan(); } } } catch (e) {}
+})();
+(async () => {
+  const ok = await Store.connect();
+  if (!ok) { setSync(); return; }
   try {
-    if (!window.claude || !window.claude.use) return;
-    sample = await window.claude.use("sample");
-    if (sample) document.getElementById("btn-claude").hidden = false;
-  } catch (e) {}
+    const remote = await Store.loadDb();
+    Store.mode = "db";
+    const hasRemote = remote.partners.length || remote.profile;
+    if (hasRemote) {
+      applyLoaded(remote);
+    } else {
+      // Erstes Mal mit Konto: was bisher im Browser lag, übernehmen
+      state.partners.filter(p => !p.example).forEach(p => Store.savePartner(p));
+      state.sessions.forEach(s => Store.saveSession(s));
+      Store.saveProfile();
+    }
+    Store.saveLocal(); renderAll(); fillForm(); setSync();
+  } catch (e) {
+    Store.mode = "local"; setSync("Konto-Speicher gerade nicht erreichbar. Deine Daten bleiben in diesem Browser.");
+  }
 })();
 </script>

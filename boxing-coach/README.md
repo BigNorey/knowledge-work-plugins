@@ -21,6 +21,17 @@ Claude antwortet mit:
 
 Danach: „Mach mir einen Trainingsplan bis Samstag" → Wochenplan.
 
+## Web-App (Testversion)
+
+`app/sparring-analyse.html` ist eine eigenständige Web-App:
+
+- **Mehrere Sparringspartner**: für jeden ein eigenes Profil
+- **Analyse**: Stil, Konter für jede Gewohnheit (passend zur Auslage), Gameplan, Drills, plus Details wie Lieblingskombi, Reaktion auf Treffer und Verhalten an den Seilen
+- **Tagebuch**: nach dem Sparring eintragen, welche Konter geklappt haben. Konter, die mehrfach nicht klappen, werden durch eine Alternative ersetzt, und was klappt, wird zur Konter-Falle im Gameplan
+- **Trainingsplan**: Wochenplan nach Trainingstagen, Dauer und Ausrüstung, mit leichtem Tag vor dem Sparring
+- **Rundentimer**: mit Gong und 10-Sekunden-Warnung. In der Pause zeigt er die drei wichtigsten Gameplan-Punkte an
+- **Claude-Analyse** (optional): ausführliche Analyse und Wochenplan, mit Nachfragen
+
 ## Tipp
 
 Gib nach dem Sparring Feedback („der Cross-Konter hat geklappt, aber er hat dann angefangen zu doppeln") – dann wird die Analyse immer genauer.
